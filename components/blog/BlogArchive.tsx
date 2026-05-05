@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { ArchiveEntry } from "@/lib/data/mock-posts";
+import type { ArchiveEntry } from "@/lib/supabase/queries/posts";
 
 const MONTH_NAMES = [
   "Jan",

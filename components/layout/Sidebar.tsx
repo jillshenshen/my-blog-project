@@ -2,18 +2,16 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RecentPosts } from "@/components/blog/RecentPosts";
 import { TaxonomyList } from "@/components/blog/TaxonomyList";
 import { BlogArchive } from "@/components/blog/BlogArchive";
-import {
-  getAllCategories,
-  getAllTags,
-  getArchive,
-  getRecentPosts,
-} from "@/lib/data/mock-posts";
+import { getRecentPosts, getArchive } from "@/lib/supabase/queries/posts";
+import { getAllCategories, getAllTags } from "@/lib/supabase/queries/tags";
 
-export function Sidebar() {
-  const recent = getRecentPosts(5);
-  const categories = getAllCategories();
-  const tags = getAllTags();
-  const archive = getArchive();
+export async function Sidebar() {
+  const [recent, categories, tags, archive] = await Promise.all([
+    getRecentPosts(5),
+    getAllCategories(),
+    getAllTags(),
+    getArchive(),
+  ]);
 
   return (
     <aside className="space-y-10">

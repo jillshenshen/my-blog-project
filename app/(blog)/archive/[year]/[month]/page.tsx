@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { getArchive, getPostsByYearMonth } from "@/lib/data/mock-posts";
+import { getArchive, getPostsByYearMonth } from "@/lib/supabase/queries/posts";
 
 const MONTH_NAMES = [
   "January",
@@ -21,9 +21,9 @@ const MONTH_NAMES = [
 
 type Params = { year: string; month: string };
 
-export function generateStaticParams(): Params[] {
+export async function generateStaticParams(): Promise<Params[]> {
   const out: Params[] = [];
-  for (const entry of getArchive()) {
+  for (const entry of await getArchive()) {
     for (const m of entry.months) {
       out.push({
         year: String(entry.year),
@@ -59,7 +59,7 @@ export default async function ArchiveMonthPage({
   if (!Number.isFinite(yearNum) || !Number.isFinite(monthNum)) notFound();
   if (monthNum < 1 || monthNum > 12) notFound();
 
-  const posts = getPostsByYearMonth(yearNum, monthNum);
+  const posts = await getPostsByYearMonth(yearNum, monthNum);
   if (posts.length === 0) notFound();
 
   const monthName = MONTH_NAMES[monthNum - 1];

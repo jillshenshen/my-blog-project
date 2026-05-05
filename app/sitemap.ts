@@ -1,15 +1,18 @@
 import type { MetadataRoute } from "next";
-import {
-  getAllCategories,
-  getAllPosts,
-  getAllTags,
-  getArchive,
-} from "@/lib/data/mock-posts";
+import { getAllPosts, getArchive } from "@/lib/supabase/queries/posts";
+import { getAllCategories, getAllTags } from "@/lib/supabase/queries/tags";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+
+  const [posts, categories, tags, archive] = await Promise.all([
+    getAllPosts(),
+    getAllCategories(),
+    getAllTags(),
+    getArchive(),
+  ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: now, priority: 1 },
@@ -18,33 +21,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/tags`, lastModified: now, priority: 0.6 },
   ];
 
-  const postEntries: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+  const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${SITE_URL}/posts/${post.slug}`,
     lastModified: new Date(post.updatedAt),
     priority: 0.7,
   }));
 
-  const categoryEntries: MetadataRoute.Sitemap = getAllCategories().map(
-    (c) => ({
-      url: `${SITE_URL}/categories/${c.slug}`,
-      lastModified: now,
-      priority: 0.5,
-    }),
-  );
+  const categoryEntries: MetadataRoute.Sitemap = categories.map((c) => ({
+    url: `${SITE_URL}/categories/${c.slug}`,
+    lastModified: now,
+    priority: 0.5,
+  }));
 
-  const tagEntries: MetadataRoute.Sitemap = getAllTags().map((tag) => ({
+  const tagEntries: MetadataRoute.Sitemap = tags.map((tag) => ({
     url: `${SITE_URL}/tags/${tag.slug}`,
     lastModified: now,
     priority: 0.4,
   }));
 
-  const archiveEntries: MetadataRoute.Sitemap = getArchive().flatMap(
-    (entry) =>
-      entry.months.map((m) => ({
-        url: `${SITE_URL}/archive/${entry.year}/${String(m.month).padStart(2, "0")}`,
-        lastModified: now,
-        priority: 0.3,
-      })),
+  const archiveEntries: MetadataRoute.Sitemap = archive.flatMap((entry) =>
+    entry.months.map((m) => ({
+      url: `${SITE_URL}/archive/${entry.year}/${String(m.month).padStart(2, "0")}`,
+      lastModified: now,
+      priority: 0.3,
+    })),
   );
 
   return [

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { searchPosts } from "@/lib/data/mock-posts";
+import { searchPosts } from "@/lib/supabase/queries/posts";
 
 type SearchParams = { q?: string };
 
@@ -25,7 +25,7 @@ export default async function SearchPage({
 }) {
   const { q = "" } = await searchParams;
   const query = q.trim();
-  const results = query ? searchPosts(query) : [];
+  const results = query ? await searchPosts(query) : [];
 
   return (
     <>

@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { getPostsByCategory } from "@/lib/supabase/queries/posts";
 import {
   getAllCategories,
   getCategoryBySlug,
-  getPostsByCategory,
-} from "@/lib/data/mock-posts";
+} from "@/lib/supabase/queries/tags";
 
 type Params = { slug: string };
 
-export function generateStaticParams(): Params[] {
-  return getAllCategories().map((c) => ({ slug: c.slug }));
+export async function generateStaticParams(): Promise<Params[]> {
+  const categories = await getAllCategories();
+  return categories.map((c) => ({ slug: c.slug }));
 }
 
 export async function generateMetadata({
@@ -20,7 +21,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) return { title: "Not Found" };
   return {
     title: category.name,
@@ -34,10 +35,10 @@ export default async function CategoryPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const posts = getPostsByCategory(slug);
+  const posts = await getPostsByCategory(slug);
 
   return (
     <>

@@ -2,15 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import {
-  getAllTags,
-  getPostsByTag,
-} from "@/lib/data/mock-posts";
+import { getPostsByTag } from "@/lib/supabase/queries/posts";
+import { getAllTags, getTagBySlug } from "@/lib/supabase/queries/tags";
 
 type Params = { slug: string };
 
-export function generateStaticParams(): Params[] {
-  return getAllTags().map((tag) => ({ slug: tag.slug }));
+export async function generateStaticParams(): Promise<Params[]> {
+  const tags = await getAllTags();
+  return tags.map((t) => ({ slug: t.slug }));
 }
 
 export async function generateMetadata({
@@ -19,7 +18,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const tag = getAllTags().find((t) => t.slug === slug);
+  const tag = await getTagBySlug(slug);
   if (!tag) return { title: "Not Found" };
   return {
     title: `#${tag.name}`,
@@ -33,10 +32,10 @@ export default async function TagPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const tag = getAllTags().find((t) => t.slug === slug);
+  const tag = await getTagBySlug(slug);
   if (!tag) notFound();
 
-  const posts = getPostsByTag(slug);
+  const posts = await getPostsByTag(slug);
 
   return (
     <>

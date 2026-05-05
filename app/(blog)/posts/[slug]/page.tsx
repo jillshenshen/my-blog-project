@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/blog/MarkdownRenderer";
-import { getAllPosts, getPostBySlug } from "@/lib/data/mock-posts";
+import { getAllPosts, getPostBySlug } from "@/lib/supabase/queries/posts";
 import { formatDate } from "@/lib/utils/format";
 import {
   calculateReadingTime,
@@ -12,8 +12,9 @@ import {
 
 type Params = { slug: string };
 
-export function generateStaticParams(): Params[] {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+export async function generateStaticParams(): Promise<Params[]> {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
@@ -22,7 +23,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) return { title: "Not Found" };
 
   return {
@@ -44,7 +45,7 @@ export default async function PostPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
   const readingTime = calculateReadingTime(post.content);
