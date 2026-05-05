@@ -1,0 +1,58 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { ArticleCard } from "@/components/blog/ArticleCard";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import {
+  getAllCategories,
+  getCategoryBySlug,
+  getPostsByCategory,
+} from "@/lib/data/mock-posts";
+
+type Params = { slug: string };
+
+export function generateStaticParams(): Params[] {
+  return getAllCategories().map((c) => ({ slug: c.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = getCategoryBySlug(slug);
+  if (!category) return { title: "Not Found" };
+  return {
+    title: category.name,
+    description: `分類為 ${category.name} 的所有文章。`,
+  };
+}
+
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { slug } = await params;
+  const category = getCategoryBySlug(slug);
+  if (!category) notFound();
+
+  const posts = getPostsByCategory(slug);
+
+  return (
+    <>
+      <SectionHeading className="pt-4">{category.name}</SectionHeading>
+      {posts.length === 0 ? (
+        <p className="py-20 text-center text-sm text-muted">
+          此分類目前沒有文章。
+        </p>
+      ) : (
+        <div>
+          {posts.map((post) => (
+            <ArticleCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}

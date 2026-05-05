@@ -1,0 +1,143 @@
+/* 共用 CSS Variables 結構 — 各主題覆寫值 */
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-foreground: var(--color-fg);
+  --color-muted: var(--color-fg-muted);
+  --color-subtle: var(--color-fg-subtle);
+  --color-border-default: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-tag-bg: var(--color-tag-bg);
+  --color-tag-fg: var(--color-tag-fg);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  --font-script: var(--font-dancing);
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Markdown 內容樣式 */
+.markdown {
+  font-size: 1rem;
+  line-height: 1.85;
+}
+.markdown > * + * {
+  margin-top: 1.25em;
+}
+.markdown h1 {
+  font-family: var(--font-playfair), serif;
+  font-size: 2rem;
+  margin-top: 2.5em;
+  letter-spacing: -0.01em;
+}
+.markdown h2 {
+  font-family: var(--font-playfair), serif;
+  font-size: 1.6rem;
+  margin-top: 2.2em;
+}
+.markdown h3 {
+  font-family: var(--font-playfair), serif;
+  font-size: 1.3rem;
+  margin-top: 1.8em;
+}
+.markdown a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 1.5em;
+}
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+.markdown blockquote {
+  border-left: 3px solid var(--color-border);
+  padding: 0.25em 1em;
+  color: var(--color-fg-muted);
+  font-style: italic;
+}
+.markdown :not(pre) > code {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.markdown pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1em 1.25em;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.markdown pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--color-border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.markdown th {
+  background: var(--color-surface);
+}
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2em 0;
+}
+
+/* shiki 雙主題切換 */
+[data-theme="light"] .markdown code[data-theme="dark"],
+[data-theme="light"] .markdown pre[data-theme="dark"] {
+  display: none;
+}
+[data-theme="dark"] .markdown code[data-theme="light"],
+[data-theme="dark"] .markdown pre[data-theme="light"] {
+  display: none;
+}
+
+[data-theme="light"] .dark-show {
+  display: none;
+}
+[data-theme="light"] .dark-hide {
+  display: inline-block;
+}
+[data-theme="dark"] .dark-show {
+  display: inline-block;
+}
+[data-theme="dark"] .dark-hide {
+  display: none;
+}

@@ -1,0 +1,25 @@
+/* Light theme — 預設 */
+
+[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-fg: #2b2b2b;
+  --color-fg-muted: #8a8a8a;
+  --color-fg-subtle: #b5b5b5;
+  --color-border: #ececec;
+  --color-accent: #6cb39e;
+  --color-tag-bg: #ffffff;
+  --color-tag-fg: #4a4a4a;
+}
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-fg: #2b2b2b;
+  --color-fg-muted: #8a8a8a;
+  --color-fg-subtle: #b5b5b5;
+  --color-border: #ececec;
+  --color-accent: #6cb39e;
+  --color-tag-bg: #ffffff;
+  --color-tag-fg: #4a4a4a;
+}
