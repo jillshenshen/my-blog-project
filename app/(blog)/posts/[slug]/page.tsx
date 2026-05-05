@@ -51,7 +51,7 @@ export default async function PostPage({
   const readingTime = calculateReadingTime(post.content);
 
   return (
-    <article className="border border-[var(--color-border)] bg-surface px-6 py-10 sm:px-12 sm:py-14">
+    <article className="px-2 py-6 sm:px-6 sm:py-10">
       <header className="text-center">
         <Link
           href={`/categories/${post.category.slug}`}
