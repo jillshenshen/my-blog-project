@@ -41,11 +41,7 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <Suspense
-              fallback={
-                <div className="h-8 w-56 rounded-full border border-[var(--color-border)] bg-surface" />
-              }
-            >
+            <Suspense fallback={<div className="h-8 w-9" />}>
               <SearchBar />
             </Suspense>
             <ThemeToggle />

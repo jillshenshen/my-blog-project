@@ -17,7 +17,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="切換主題"
-      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border)] text-foreground transition hover:bg-[var(--color-surface)]"
+      className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--color-border)] text-foreground transition hover:bg-[var(--color-surface)]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
