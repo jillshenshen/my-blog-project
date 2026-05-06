@@ -119,6 +119,40 @@ body {
   margin: 2em 0;
 }
 
+/* Tiptap task list */
+.markdown ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+.markdown ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+.markdown ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.4em;
+}
+.markdown ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+.markdown ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: default;
+  accent-color: var(--color-accent);
+}
+
+/* Tiptap selection / placeholder */
+.ProseMirror:focus {
+  outline: none;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-fg-subtle);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 /* shiki 雙主題切換 */
 [data-theme="light"] .markdown code[data-theme="dark"],
 [data-theme="light"] .markdown pre[data-theme="dark"] {

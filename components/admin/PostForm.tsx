@@ -4,8 +4,9 @@ import { useState } from "react";
 import type { Category } from "@/lib/types/category";
 import type { Tag } from "@/lib/types/tag";
 import type { Post } from "@/lib/types/post";
-import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
+import { TiptapEditor } from "@/components/admin/TiptapEditor";
 import { TagsField } from "@/components/admin/TagsField";
+import { CoverImageField } from "@/components/admin/CoverImageField";
 import { slugify } from "@/lib/utils/slugify";
 
 type Props = {
@@ -107,22 +108,10 @@ export function PostForm({
       </div>
 
       {/* Cover Image */}
-      <div className="space-y-2">
-        <label
-          htmlFor="coverImage"
-          className="text-[10px] tracking-[0.3em] text-muted uppercase"
-        >
-          Cover Image URL（可空，Phase 2-C 將支援上傳）
-        </label>
-        <input
-          id="coverImage"
-          name="coverImage"
-          type="url"
-          defaultValue={initial?.coverImage ?? ""}
-          placeholder="https://..."
-          className="h-10 w-full border-b border-[var(--color-border)] bg-transparent px-1 font-mono text-sm text-foreground outline-none transition focus:border-[var(--color-accent)]"
-        />
-      </div>
+      <CoverImageField
+        name="coverImage"
+        defaultValue={initial?.coverImage ?? ""}
+      />
 
       {/* Category + Published */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -181,7 +170,7 @@ export function PostForm({
       </div>
 
       {/* Content */}
-      <MarkdownEditor name="content" defaultValue={initial?.content ?? ""} />
+      <TiptapEditor name="content" defaultValue={initial?.content ?? ""} />
 
       {/* Submit */}
       <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t border-[var(--color-border)] bg-background px-4 py-4 sm:-mx-6 sm:px-6">

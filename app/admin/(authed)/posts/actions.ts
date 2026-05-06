@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSupabaseServerWithAuth } from "@/lib/supabase/server-auth";
 import { isSlugTaken } from "@/lib/supabase/queries/admin-posts";
 import { slugify } from "@/lib/utils/slugify";
+import { sanitizeContentHtml } from "@/lib/utils/sanitize-html";
 import type { Tag } from "@/lib/types/tag";
 
 async function requireAuth() {
@@ -39,11 +40,12 @@ function parseForm(formData: FormData): PostFormFields {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const rawContent = String(formData.get("content") ?? "");
   return {
     title,
     slug,
     excerpt: String(formData.get("excerpt") ?? "").trim() || null,
-    content: String(formData.get("content") ?? ""),
+    content: sanitizeContentHtml(rawContent),
     coverImage: String(formData.get("coverImage") ?? "").trim() || null,
     categoryId: String(formData.get("categoryId") ?? ""),
     tagIds,
@@ -56,7 +58,7 @@ function validate(f: PostFormFields): string | null {
   if (!f.slug) return "Slug 為必填（標題為空時無法自動產生）";
   if (!/^[a-z0-9一-鿿぀-ヿ가-힯-]+$/.test(f.slug))
     return "Slug 格式錯誤（只能用英數小寫、中文、連字號）";
-  if (!f.content.trim()) return "內容為必填";
+  if (!f.content.replace(/<[^>]+>/g, "").trim()) return "內容為必填";
   if (!f.categoryId) return "請選擇分類";
   return null;
 }

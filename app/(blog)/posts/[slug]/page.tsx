@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MarkdownRenderer } from "@/components/blog/MarkdownRenderer";
+import { HtmlContent } from "@/components/blog/HtmlContent";
 import { getAllPosts, getPostBySlug } from "@/lib/supabase/queries/posts";
 import { formatDate } from "@/lib/utils/format";
 import {
@@ -81,7 +81,7 @@ export default async function PostPage({
       </div>
 
       <div className="mt-10">
-        <MarkdownRenderer content={post.content} />
+        <HtmlContent html={post.content} />
       </div>
 
       {post.tags.length > 0 ? (
