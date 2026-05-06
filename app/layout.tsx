@@ -4,6 +4,7 @@ import {
   Playfair_Display,
   Dancing_Script,
   Noto_Serif_TC,
+  Noto_Sans_TC,
 } from "next/font/google";
 import "./globals.css";
 
@@ -27,6 +28,13 @@ const dancing = Dancing_Script({
 
 const notoSerifTC = Noto_Serif_TC({
   variable: "--font-noto-serif-tc",
+  weight: ["400", "700"],
+  display: "swap",
+  preload: false,
+});
+
+const notoSansTC = Noto_Sans_TC({
+  variable: "--font-noto-sans-tc",
   weight: ["400", "700"],
   display: "swap",
   preload: false,
@@ -64,7 +72,7 @@ export default function RootLayout({
     <html
       lang="zh-Hant"
       data-theme="light"
-      className={`${inter.variable} ${playfair.variable} ${dancing.variable} ${notoSerifTC.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} ${dancing.variable} ${notoSerifTC.variable} ${notoSansTC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

@@ -49,6 +49,10 @@ const FONT_OPTIONS: { label: string; value: string | null }[] = [
       '"Playfair Display", Georgia, "Songti TC", "PMingLiU", serif',
   },
   {
+    label: "思源黑體",
+    value: '"Noto Sans TC", "Source Han Sans TC", sans-serif',
+  },
+  {
     label: "思源宋體",
     value: '"Noto Serif TC", "Source Han Serif TC", serif',
   },
