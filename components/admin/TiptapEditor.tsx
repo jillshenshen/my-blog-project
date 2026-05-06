@@ -11,6 +11,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Underline from "@tiptap/extension-underline";
 import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { FontFamily } from "@tiptap/extension-font-family";
 import { uploadImageAction } from "@/app/admin/(authed)/posts/upload-action";
 
 type Props = {
@@ -32,6 +33,35 @@ const COLOR_SWATCHES = [
   { name: "藍", value: "#3a82e8" },
   { name: "紫", value: "#9461d9" },
   { name: "灰", value: "#8a8a8a" },
+];
+
+// 每組 font-family 都有英 + 繁中 fallback，瀏覽器會依字元逐一挑選
+const FONT_OPTIONS: { label: string; value: string | null }[] = [
+  { label: "預設", value: null },
+  {
+    label: "黑體 / Sans",
+    value:
+      '"Inter", "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Heiti TC", sans-serif',
+  },
+  {
+    label: "明體 / Serif",
+    value:
+      '"Playfair Display", Georgia, "Songti TC", "PMingLiU", "Source Han Serif TC", serif',
+  },
+  {
+    label: "圓體 / Round",
+    value:
+      '"Comic Sans MS", "Yuanti TC", "STHeitiTC-Light", "Microsoft YaHei", sans-serif',
+  },
+  {
+    label: "手寫 / Script",
+    value: '"Dancing Script", "DFKai-SB", "BiauKai", cursive',
+  },
+  {
+    label: "等寬 / Mono",
+    value:
+      'ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace',
+  },
 ];
 
 function ToolbarBtn({
@@ -123,6 +153,67 @@ function ColorPicker({ editor }: { editor: Editor }) {
   );
 }
 
+function FontPicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current =
+    (editor.getAttributes("textStyle").fontFamily as string | undefined) ?? null;
+  const currentLabel =
+    FONT_OPTIONS.find((f) => f.value === current)?.label ?? "字型";
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(value: string | null) {
+    if (value === null) editor.chain().focus().unsetFontFamily().run();
+    else editor.chain().focus().setFontFamily(value).run();
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="字型"
+        aria-label="字型"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span style={{ fontFamily: current ?? undefined }}>Aa</span>
+        <span className="text-[10px] text-muted">{currentLabel}</span>
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 w-48 border border-[var(--color-border)] bg-background py-1 shadow-md">
+          {FONT_OPTIONS.map((f) => (
+            <button
+              key={f.label}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(f.value)}
+              className={`flex w-full cursor-pointer items-center justify-between px-3 py-2 text-sm transition hover:bg-[var(--color-surface)] ${
+                current === f.value ? "text-accent" : "text-foreground"
+              }`}
+              style={{ fontFamily: f.value ?? undefined }}
+            >
+              <span>{f.label}</span>
+              {current === f.value ? (
+                <span className="text-[10px]">✓</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Toolbar({
   editor,
   onUploadImage,
@@ -205,6 +296,7 @@ function Toolbar({
         <s>S</s>
       </ToolbarBtn>
       <ColorPicker editor={editor} />
+      <FontPicker editor={editor} />
       <ToolbarBtn
         title="行內程式碼"
         active={editor.isActive("code")}
@@ -314,6 +406,7 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       Underline,
       TextStyle,
       Color,
+      FontFamily,
       Image.configure({
         inline: false,
         allowBase64: false,
