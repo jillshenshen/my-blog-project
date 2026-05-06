@@ -46,7 +46,19 @@ const FONT_OPTIONS: { label: string; value: string | null }[] = [
   {
     label: "明體 / Serif",
     value:
-      '"Playfair Display", Georgia, "Songti TC", "PMingLiU", "Source Han Serif TC", serif',
+      '"Playfair Display", Georgia, "Songti TC", "PMingLiU", serif',
+  },
+  {
+    label: "思源宋體",
+    value: '"Noto Serif TC", "Source Han Serif TC", serif',
+  },
+  {
+    label: "蘋方 (Apple 系統)",
+    value: '"PingFang TC", "PingFang HK", "PingFang SC", sans-serif',
+  },
+  {
+    label: "金萱 (justfont)",
+    value: '"jf-jinxuan", "jf-jinxuan-fresh", serif',
   },
   {
     label: "圓體 / Round",

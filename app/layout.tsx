@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Dancing_Script } from "next/font/google";
+import {
+  Inter,
+  Playfair_Display,
+  Dancing_Script,
+  Noto_Serif_TC,
+} from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,6 +23,13 @@ const dancing = Dancing_Script({
   variable: "--font-dancing",
   subsets: ["latin"],
   display: "swap",
+});
+
+const notoSerifTC = Noto_Serif_TC({
+  variable: "--font-noto-serif-tc",
+  weight: ["400", "700"],
+  display: "swap",
+  preload: false,
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -52,7 +64,7 @@ export default function RootLayout({
     <html
       lang="zh-Hant"
       data-theme="light"
-      className={`${inter.variable} ${playfair.variable} ${dancing.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} ${dancing.variable} ${notoSerifTC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
