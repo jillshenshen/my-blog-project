@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HtmlContent } from "@/components/blog/HtmlContent";
 import { getAllPosts, getPostBySlug } from "@/lib/supabase/queries/posts";
+import { decodeParam } from "@/lib/utils/decode-param";
 import { formatDate } from "@/lib/utils/format";
 import {
   calculateReadingTime,
@@ -22,7 +23,8 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const post = await getPostBySlug(slug);
   if (!post) return { title: "Not Found" };
 
@@ -44,7 +46,8 @@ export default async function PostPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 

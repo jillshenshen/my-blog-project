@@ -4,6 +4,7 @@ import { ArticleCard } from "@/components/blog/ArticleCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getPostsByTag } from "@/lib/supabase/queries/posts";
 import { getAllTags, getTagBySlug } from "@/lib/supabase/queries/tags";
+import { decodeParam } from "@/lib/utils/decode-param";
 
 type Params = { slug: string };
 
@@ -17,7 +18,8 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const tag = await getTagBySlug(slug);
   if (!tag) return { title: "Not Found" };
   return {
@@ -31,7 +33,8 @@ export default async function TagPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const tag = await getTagBySlug(slug);
   if (!tag) notFound();
 

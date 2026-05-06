@@ -7,6 +7,7 @@ import {
   getAllCategories,
   getCategoryBySlug,
 } from "@/lib/supabase/queries/tags";
+import { decodeParam } from "@/lib/utils/decode-param";
 
 type Params = { slug: string };
 
@@ -20,7 +21,8 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const category = await getCategoryBySlug(slug);
   if (!category) return { title: "Not Found" };
   return {
@@ -34,7 +36,8 @@ export default async function CategoryPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeParam(rawSlug);
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
