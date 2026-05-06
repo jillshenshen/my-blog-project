@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -8,6 +8,9 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Underline from "@tiptap/extension-underline";
+import { Color } from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
 import { uploadImageAction } from "@/app/admin/(authed)/posts/upload-action";
 
 type Props = {
@@ -19,6 +22,17 @@ const labelClass =
   "cursor-pointer rounded border border-transparent px-2 py-1 text-xs text-foreground transition hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]";
 const activeClass =
   "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-accent";
+
+const COLOR_SWATCHES = [
+  { name: "預設", value: null },
+  { name: "薄荷綠", value: "#6cb39e" },
+  { name: "紅", value: "#e15555" },
+  { name: "橘", value: "#e89b3a" },
+  { name: "黃", value: "#d4b021" },
+  { name: "藍", value: "#3a82e8" },
+  { name: "紫", value: "#9461d9" },
+  { name: "灰", value: "#8a8a8a" },
+];
 
 function ToolbarBtn({
   active = false,
@@ -47,6 +61,66 @@ function ToolbarBtn({
 
 function Divider() {
   return <span className="mx-1 h-5 w-px bg-[var(--color-border)]" />;
+}
+
+function ColorPicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = (editor.getAttributes("textStyle").color as string) ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(color: string | null) {
+    if (color === null) editor.chain().focus().unsetColor().run();
+    else editor.chain().focus().setColor(color).run();
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="文字顏色"
+        aria-label="文字顏色"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span className="font-serif">A</span>
+        <span
+          className="block h-1 w-4 rounded-sm"
+          style={{ background: current ?? "var(--color-fg)" }}
+        />
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 grid w-44 grid-cols-4 gap-1.5 border border-[var(--color-border)] bg-background p-2 shadow-md">
+          {COLOR_SWATCHES.map((s) => (
+            <button
+              key={s.name}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(s.value)}
+              title={s.name}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-[var(--color-border)] transition hover:border-foreground"
+              style={{
+                background: s.value ?? "transparent",
+                color: s.value ? "#fff" : "var(--color-fg)",
+              }}
+            >
+              {s.value === null ? "×" : ""}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function Toolbar({
@@ -117,12 +191,20 @@ function Toolbar({
         <em>I</em>
       </ToolbarBtn>
       <ToolbarBtn
+        title="底線 (Cmd+U)"
+        active={editor.isActive("underline")}
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+      >
+        <span className="underline">U</span>
+      </ToolbarBtn>
+      <ToolbarBtn
         title="刪除線"
         active={editor.isActive("strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <s>S</s>
       </ToolbarBtn>
+      <ColorPicker editor={editor} />
       <ToolbarBtn
         title="行內程式碼"
         active={editor.isActive("code")}
@@ -229,6 +311,9 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
       }),
+      Underline,
+      TextStyle,
+      Color,
       Image.configure({
         inline: false,
         allowBase64: false,
