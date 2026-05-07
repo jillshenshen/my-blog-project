@@ -51,6 +51,12 @@ body {
   font-size: 1.3rem;
   margin-top: 1.8em;
 }
+.markdown h4 {
+  font-family: var(--font-playfair), serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+}
 .markdown a {
   color: var(--color-accent);
   text-decoration: underline;

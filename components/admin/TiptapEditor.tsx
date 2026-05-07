@@ -89,6 +89,20 @@ const FONT_SIZE_OPTIONS: { label: string; value: string | null }[] = [
   { label: "最大", value: "2rem" }, // 32px
 ];
 
+type StyleAction = "h1" | "h2" | "h3" | "h4" | "p" | "clear";
+const STYLE_OPTIONS: {
+  label: string;
+  action: StyleAction;
+  preview: string;
+}[] = [
+  { label: "大標題", action: "h1", preview: "font-serif text-2xl" },
+  { label: "標題", action: "h2", preview: "font-serif text-xl" },
+  { label: "子標題", action: "h3", preview: "font-serif text-lg" },
+  { label: "小標題", action: "h4", preview: "font-serif text-base font-semibold" },
+  { label: "段落", action: "p", preview: "text-base" },
+  { label: "一般", action: "clear", preview: "text-sm text-muted" },
+];
+
 // 每組 font-family 都有英 + 繁中 fallback，瀏覽器會依字元逐一挑選
 const FONT_OPTIONS: { label: string; value: string | null }[] = [
   { label: "預設", value: null },
@@ -335,6 +349,83 @@ function SizePicker({ editor }: { editor: Editor }) {
   );
 }
 
+function StylePicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  let currentLabel = "一般";
+  if (editor.isActive("heading", { level: 1 })) currentLabel = "大標題";
+  else if (editor.isActive("heading", { level: 2 })) currentLabel = "標題";
+  else if (editor.isActive("heading", { level: 3 })) currentLabel = "子標題";
+  else if (editor.isActive("heading", { level: 4 })) currentLabel = "小標題";
+  else if (editor.isActive("paragraph")) currentLabel = "段落";
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(action: StyleAction) {
+    const chain = editor.chain().focus();
+    switch (action) {
+      case "h1":
+      case "h2":
+      case "h3":
+      case "h4":
+        chain.toggleHeading({ level: Number(action[1]) as 1 | 2 | 3 | 4 }).run();
+        break;
+      case "p":
+        chain.setParagraph().run();
+        break;
+      case "clear":
+        chain.setParagraph().unsetAllMarks().run();
+        break;
+    }
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="段落樣式"
+        aria-label="段落樣式"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span>{currentLabel}</span>
+        <span className="text-[10px] text-muted">▼</span>
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 w-32 border border-[var(--color-border)] bg-background py-1 shadow-md">
+          {STYLE_OPTIONS.map((opt) => {
+            const active = opt.label === currentLabel;
+            return (
+              <button
+                key={opt.label}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(opt.action)}
+                className={`flex w-full cursor-pointer items-center justify-between px-3 py-2 transition hover:bg-[var(--color-surface)] ${
+                  active ? "text-accent" : "text-foreground"
+                }`}
+              >
+                <span className={opt.preview}>{opt.label}</span>
+                {active ? <span className="text-[10px]">✓</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function FontPicker({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -421,33 +512,7 @@ function Toolbar({
 
   return (
     <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border border-[var(--color-border)] border-b-0 bg-background px-2 py-1.5">
-      <ToolbarBtn
-        title="標題 1"
-        active={editor.isActive("heading", { level: 1 })}
-        onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 1 }).run()
-        }
-      >
-        H1
-      </ToolbarBtn>
-      <ToolbarBtn
-        title="標題 2"
-        active={editor.isActive("heading", { level: 2 })}
-        onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 2 }).run()
-        }
-      >
-        H2
-      </ToolbarBtn>
-      <ToolbarBtn
-        title="標題 3"
-        active={editor.isActive("heading", { level: 3 })}
-        onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 3 }).run()
-        }
-      >
-        H3
-      </ToolbarBtn>
+      <StylePicker editor={editor} />
       <Divider />
       <ToolbarBtn
         title="粗體 (Cmd+B)"
@@ -584,7 +649,7 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        heading: { levels: [1, 2, 3, 4] },
       }),
       Underline,
       TextStyle,
