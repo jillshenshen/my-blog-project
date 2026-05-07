@@ -5,6 +5,32 @@ import { Extension } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+
+// 擴充 Image：當 <img> 在 figure[data-type="figure"] 裡面時跳過解析，
+// 交給 Figure extension 處理（避免同一張圖被 Image + Figure 重複渲染）
+const NestedAwareImage = Image.extend({
+  parseHTML() {
+    return [
+      {
+        tag: "img[src]",
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          let parent = el.parentElement;
+          while (parent) {
+            if (
+              parent.tagName.toLowerCase() === "figure" &&
+              parent.getAttribute("data-type") === "figure"
+            ) {
+              return false;
+            }
+            parent = parent.parentElement;
+          }
+          return null;
+        },
+      },
+    ];
+  },
+});
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
@@ -657,8 +683,8 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       Color,
       FontFamily,
       FontSize,
-      // 舊文章相容用：保留 Image 解析既有 <img>，新插入一律走 Figure
-      Image.configure({
+      // 舊文章相容用：保留 Image 解析既有 <img>（不在 figure 裡的），新插入一律走 Figure
+      NestedAwareImage.configure({
         inline: false,
         allowBase64: false,
         HTMLAttributes: { class: "my-6 max-w-full" },
