@@ -7,6 +7,7 @@ import { getSupabaseServerWithAuth } from "@/lib/supabase/server-auth";
 import { isSlugTaken } from "@/lib/supabase/queries/admin-posts";
 import { slugify } from "@/lib/utils/slugify";
 import { sanitizeContentHtml } from "@/lib/utils/sanitize-html";
+import { dedupeFigureImages } from "@/lib/utils/dedupe-figure-images";
 import type { Tag } from "@/lib/types/tag";
 
 async function requireAuth() {
@@ -45,7 +46,7 @@ function parseForm(formData: FormData): PostFormFields {
     title,
     slug,
     excerpt: String(formData.get("excerpt") ?? "").trim() || null,
-    content: sanitizeContentHtml(rawContent),
+    content: dedupeFigureImages(sanitizeContentHtml(rawContent)),
     coverImage: String(formData.get("coverImage") ?? "").trim() || null,
     categoryId: String(formData.get("categoryId") ?? ""),
     tagIds,
