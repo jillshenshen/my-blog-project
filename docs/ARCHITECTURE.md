@@ -106,46 +106,74 @@ middleware.ts 攔截
 
 ### `app/` — 頁面與路由
 
-| 路徑 | 職責 |
-|------|------|
-| `app/(blog)/page.tsx` | 首頁，文章列表 |
-| `app/(blog)/posts/[slug]/page.tsx` | 文章詳細頁 |
-| `app/(blog)/tags/[slug]/page.tsx` | 標籤頁 |
-| `app/(blog)/albums/page.tsx` | 相簿列表 |
-| `app/(blog)/albums/[id]/page.tsx` | 相簿詳細頁 |
-| `app/admin/page.tsx` | 後台首頁（Dashboard） |
-| `app/admin/posts/page.tsx` | 文章管理列表 |
-| `app/admin/posts/new/page.tsx` | 新增文章 |
-| `app/admin/posts/[id]/edit/page.tsx` | 編輯文章 |
-| `app/admin/albums/page.tsx` | 相簿管理 |
-| `app/admin/settings/page.tsx` | 主題與播放器設定 |
-| `app/admin/login/page.tsx` | 管理員登入頁 |
-| `app/api/og/route.ts` | Open Graph 圖片產生 |
-| `app/sitemap.ts` | 自動產生 Sitemap |
-| `app/robots.ts` | robots.txt |
-| `app/feed.xml/route.ts` | RSS Feed |
+#### 前台 `app/(blog)/`
+| 路徑 | 職責 | 狀態 |
+|------|------|------|
+| `page.tsx` | 首頁，文章列表 | ✅ |
+| `posts/page.tsx` | 全部文章列表 | ✅ |
+| `posts/[slug]/page.tsx` | 文章詳細頁 | ✅ |
+| `categories/page.tsx` + `[slug]/page.tsx` | 分類索引 + 篩選 | ✅ |
+| `tags/page.tsx` + `[slug]/page.tsx` | 標籤索引 + 篩選 | ✅ |
+| `archive/[year]/[month]/page.tsx` | 月份歸檔 | ✅ |
+| `search/page.tsx` | 搜尋結果（ILIKE，Phase 1 簡易版） | ✅ |
+| `albums/page.tsx`、`albums/[id]/page.tsx` | 相簿（Phase 3） | ⏳ |
+
+#### 後台 `app/admin/`
+| 路徑 | 職責 | 狀態 |
+|------|------|------|
+| `login/page.tsx` + `login/actions.ts` | 登入頁 + Server Action | ✅ |
+| `(authed)/layout.tsx` | 後台殼（含 nav / 登出 / theme toggle） | ✅ |
+| `(authed)/page.tsx` | Dashboard 統計 | ✅ |
+| `(authed)/posts/page.tsx` | 文章列表 / 篩選 / publish toggle / delete | ✅ |
+| `(authed)/posts/new/page.tsx` | 新增文章 | ✅ |
+| `(authed)/posts/[id]/edit/page.tsx` | 編輯文章 | ✅ |
+| `(authed)/posts/actions.ts` | create / update / delete / togglePublish / createTag | ✅ |
+| `(authed)/posts/upload-action.ts` | 圖片上傳到 Storage | ✅ |
+| `(authed)/categories/page.tsx` + `actions.ts` | 分類管理 | ✅ |
+| `(authed)/tags/page.tsx` + `actions.ts` | 標籤管理 | ✅ |
+| `preview/page.tsx` + `PreviewClient.tsx` | 文章預覽（不繼承 (authed) 殼，但仍受 proxy 鑑權） | ✅ |
+| `actions.ts` (root) | logout server action | ✅ |
+| `albums/`、`settings/` | Phase 3 / Phase 4 | ⏳ |
+
+#### 其他
+| 路徑 | 職責 | 狀態 |
+|------|------|------|
+| `app/sitemap.ts` | 自動產生 Sitemap（含分類 / 標籤 / 月份） | ✅ |
+| `app/robots.ts` | robots.txt | ✅ |
+| `app/layout.tsx` | 根 layout（fonts、theme init script、metadata） | ✅ |
+| `app/api/og/route.ts` | 動態 OG 圖（Phase 2-D） | ⏳ |
+| `app/feed.xml/route.ts` | RSS Feed（Phase 2-D） | ⏳ |
+| `proxy.ts` (root) | Next 16 proxy（前身：middleware.ts），保護 /admin/* 路由 | ✅ |
 
 ### `components/` — UI 元件
 
-| 目錄 | 職責 | 說明 |
-|------|------|------|
-| `components/ui/` | 基礎元件 | Button、Input、Card 等，不應隨意修改 |
-| `components/blog/` | 文章相關 | ArticleCard、ArticleList、TOC、CodeBlock |
-| `components/album/` | 相簿相關 | AlbumGrid、Lightbox、PhotoCard |
-| `components/player/` | 音樂播放器 | SpotifyPlayer |
-| `components/layout/` | 版面 | Header、Footer、ThemeToggle、MusicBar |
-| `components/admin/` | 後台元件 | MarkdownEditor、ImageUploader |
+| 目錄 | 職責 | 主要檔案 |
+|------|------|---------|
+| `components/ui/` | 基礎共用元件 | `SectionHeading.tsx`、`ThemeToggle.tsx` |
+| `components/blog/` | 前台文章相關 | `ArticleCard.tsx`、`PostArticle.tsx`、`HtmlContent.tsx`、`BlogArchive.tsx`、`RecentPosts.tsx`、`TaxonomyList.tsx` |
+| `components/layout/` | 版面 | `Header.tsx`、`Footer.tsx`、`Sidebar.tsx`、`SearchBar.tsx` |
+| `components/admin/` | 後台 | `PostForm.tsx`、`TiptapEditor.tsx`、`FigureExtension.ts`、`FigureNodeView.tsx`、`TagsField.tsx`、`CoverImageField.tsx`、`DeletePostButton.tsx`、`TagAdminRow.tsx`、`CategoryAdminRow.tsx` |
+| `components/album/`、`components/player/` | Phase 3 / Phase 4 | ⏳ |
 
 ### `lib/` — 核心邏輯
 
-| 目錄 | 職責 |
+| 路徑 | 職責 |
 |------|------|
-| `lib/supabase/client.ts` | Browser-side Supabase client（互動用） |
-| `lib/supabase/server.ts` | Server-side Supabase client（資料獲取用） |
-| `lib/supabase/queries/` | 所有資料庫查詢函式 |
-| `lib/types/` | 全域 TypeScript 型別 |
-| `lib/utils/` | 工具函式（日期、slug、閱讀時間等） |
-| `lib/theme/` | 主題定義與 CSS Variables |
+| `lib/supabase/server.ts` | 公開讀取 client（anon key, no cookies）— 前台文章、分類、標籤查詢 |
+| `lib/supabase/server-auth.ts` | cookie-aware client（`@supabase/ssr`）— login/logout、讀 user session |
+| `lib/supabase/admin.ts` | service role client（bypass RLS, server-only）— 後台寫入、Storage 上傳 |
+| `lib/supabase/client.ts` | 瀏覽器端 client（Phase 2 起暫無使用，預留 realtime 用） |
+| `lib/supabase/middleware.ts` | proxy session refresh + admin route guard |
+| `lib/supabase/queries/posts.ts` | 公開文章查詢（getAllPosts / getPostBySlug / 等） |
+| `lib/supabase/queries/tags.ts` | 公開分類 + 標籤查詢 |
+| `lib/supabase/queries/admin-posts.ts` | 後台文章查詢（含草稿，用 admin client） |
+| `lib/types/` | post.ts / tag.ts / category.ts |
+| `lib/utils/format.ts` | 日期格式 |
+| `lib/utils/slugify.ts` | 標題 → slug，支援中英文 |
+| `lib/utils/reading-time.ts` | 閱讀時間估算（中英混合，先 strip HTML） |
+| `lib/utils/decode-param.ts` | Next 16 Turbopack non-ASCII params 解碼防呆 |
+| `lib/utils/sanitize-html.ts` | DOMPurify 白名單清洗（server-only） |
+| `lib/utils/dedupe-figure-images.ts` | 移除 figure 內 img 同 src 的孤立 raw img |
 
 ---
 
@@ -171,12 +199,20 @@ middleware.ts 攔截
 ### 2. Supabase Client 使用規則
 
 ```
-Server Component / Server Action / Route Handler
-→ 使用 lib/supabase/server.ts
+公開讀取（前台文章、分類、標籤）
+→ lib/supabase/server.ts (anon key + RLS, no cookies)
 
-Client Component（僅限即時訂閱等特殊需求）
-→ 使用 lib/supabase/client.ts
+需要讀 user session（login/logout、admin layout 確認登入）
+→ lib/supabase/server-auth.ts (@supabase/ssr, cookie-aware)
+
+後台寫入（新增/編輯/刪除文章、上傳圖片、tag CRUD、category CRUD）
+→ lib/supabase/admin.ts (service_role key, bypass RLS, server-only)
+
+Client Component（暫無使用，預留 realtime 訂閱用）
+→ lib/supabase/client.ts
 ```
+
+> ⚠️ `lib/supabase/admin.ts` 透過 `import 'server-only'` 強制只在 server runtime 載入；service_role key 不會洩漏到 client bundle。
 
 ### 3. 快取策略
 
@@ -191,8 +227,29 @@ Client Component（僅限即時訂閱等特殊需求）
 ### 4. 路由保護
 
 ```
-middleware.ts 負責所有 /admin/* 的驗證
-個別 admin 頁面不需要再做驗證邏輯
+proxy.ts (root, Next 16 — 即過去的 middleware.ts) 負責：
+1. 透過 lib/supabase/middleware.ts 刷新 session cookies
+2. 對所有 /admin/* (除 /admin/login) 檢查 user，未登入 → /admin/login
+3. 已登入但訪問 /admin/login → /admin
+
+個別 admin 頁面不需要再做驗證邏輯（authed layout 額外做雙保險 redirect）。
+```
+
+### 5. 內容格式與 sanitize
+
+```
+寫入流程（後台 server action）：
+Tiptap getHTML() → 透過 hidden input 進 FormData
+  → server action 讀 FormData
+  → sanitizeContentHtml() (DOMPurify 白名單)
+  → dedupeFigureImages()  (清掉 figure 內 img 同 src 的孤立 raw img)
+  → 寫入 posts.content (text)
+
+讀取流程（前台 Server Component）：
+posts.content (sanitized HTML)
+  → <HtmlContent html={content} />
+  → <div dangerouslySetInnerHTML={{ __html }} className="markdown" />
+  → 套用 styles/themes/base.css 的 .markdown 樣式
 ```
 
 ---
@@ -201,15 +258,17 @@ middleware.ts 負責所有 /admin/* 的驗證
 
 ```
 styles/themes/
-├── base.css          ← 所有主題共用的 CSS Variables 定義
+├── base.css          ← 共用 CSS Variables 結構 + .markdown 內容樣式 + figure 圖片對齊/尺寸 CSS
 ├── light.css         ← 淺色主題值
-├── dark.css          ← 深色主題值
-├── hacker.css        ← 深色駭客主題值
-└── warm.css          ← 溫暖橘主題值
+└── dark.css          ← 深色主題值
 
 運作方式：
-<html data-theme="light"> 或 <html data-theme="dark">
-CSS Variables 自動套用對應主題
+<html data-theme="light" | "dark">
+inline script 在 <head> 從 localStorage 讀 theme，避免 FOUC
+ThemeToggle (Client Component) 切換並寫回 localStorage
+
+之後加多套主題（Phase 4）：
+新增 styles/themes/{hacker,warm}.css → 對應 data-theme 值即可
 ```
 
 ---

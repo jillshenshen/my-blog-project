@@ -45,15 +45,19 @@ create table posts (
   id           uuid primary key default gen_random_uuid(),
   title        text not null,
   slug         text unique not null,
-  content      text not null,          -- Markdown 原始內容
-  excerpt      text,                   -- 摘要（可手動填寫，否則自動截取前 160 字）
-  cover_image  text,                   -- 封面圖 URL（來自 Supabase Storage）
+  content      text not null,          -- sanitized HTML（Tiptap 編輯器輸出 + DOMPurify）
+  excerpt      text,                   -- 摘要（手動填寫；空白則前台不顯示）
+  cover_image  text,                   -- 封面圖 URL（來自 Supabase Storage `blog-images` bucket）
   category_id  uuid references categories(id) on delete restrict not null,
   published    boolean default false,
   published_at timestamptz,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
+-- 內容格式說明：
+-- 早期規劃為 Markdown，Phase 2-B 改用 Tiptap WYSIWYG 後改為 sanitized HTML。
+-- 寫入路徑：app/admin/(authed)/posts/actions.ts → sanitizeContentHtml() → dedupeFigureImages()
+-- 讀取路徑：components/blog/HtmlContent.tsx → dangerouslySetInnerHTML
 
 -- 自動更新 updated_at
 create or replace function update_updated_at()
@@ -339,19 +343,31 @@ create index posts_search_idx on posts using gin(search_vector);
 
 ## Supabase Storage Bucket
 
+### 已啟用：`blog-images`（Phase 2-C）
+
 ```
-Bucket 名稱：blog-assets
-設定：Public（允許公開讀取）
+Bucket 名稱：blog-images
+設定：Public（檔案可由公開 URL 直接存取，列表受限）
+File size limit：10 MB
+Allowed MIME：image/jpeg, image/png, image/webp, image/gif, image/avif
 
 資料夾結構：
-blog-assets/
-├── covers/          ← 文章封面圖
-│   └── {post-slug}.webp
-├── albums/          ← 相簿照片
-│   └── {album-id}/
-│       └── {photo-id}.webp
-└── music/           ← 音樂檔案（如有自行上傳需求）
-    └── {filename}.mp3
+blog-images/
+└── posts/
+    └── {uuid}.{ext}    ← 全部封面圖 + 內文圖片混在這裡，用 UUID 避免衝突
+```
+
+實際 SQL 在 `supabase/migrations/0002_storage_blog_images.sql`，可在 Supabase SQL Editor 執行。
+
+上傳路徑：`app/admin/(authed)/posts/upload-action.ts`
+- 透過 service_role key 上傳（bypass RLS）
+- 公開讀取走「Public read for blog-images」policy
+
+### Phase 3 規劃：`albums` / `music`
+
+```
+albums/{album-id}/{photo-id}.webp     ← 相簿照片（Phase 3）
+music/{filename}.mp3                   ← 自上傳音樂檔（如有）
 ```
 
 ---

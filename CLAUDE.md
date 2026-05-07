@@ -17,46 +17,65 @@
 
 | 項目 | 技術 |
 |------|------|
-| 框架 | Next.js 15（App Router） |
+| 框架 | Next.js 16（App Router + Turbopack） |
 | 語言 | TypeScript（strict mode） |
-| 樣式 | Tailwind CSS |
+| 樣式 | Tailwind CSS v4 |
 | 資料庫 | Supabase（PostgreSQL） |
-| 檔案儲存 | Supabase Storage |
-| 身份驗證 | Supabase Auth |
+| 檔案儲存 | Supabase Storage（`blog-images` bucket） |
+| 身份驗證 | Supabase Auth + `@supabase/ssr`（cookie-aware） |
+| 文章編輯器 | Tiptap v3 (StarterKit + Image/Link/TaskList/Underline/Color/TextStyle/FontFamily + 自訂 Figure 節點) |
+| 內容渲染 | sanitized HTML（`isomorphic-dompurify`） |
 | 部署 | Vercel |
-| 音樂播放 | Spotify Embed |
+| 音樂播放 | Spotify Embed（Phase 4） |
+
+> **內容格式重點**：`posts.content` 儲存 **HTML**（Tiptap 編輯器輸出，存檔時用 DOMPurify 白名單清洗），不是 Markdown。前台渲染走 `<HtmlContent />` 元件 + `dangerouslySetInnerHTML`。
 
 ---
 
 ## 專案結構
 
 ```
-├── app/                    # Next.js App Router 頁面
-│   ├── (blog)/             # 前台頁面（文章、相簿等）
-│   │   ├── page.tsx        # 首頁
-│   │   ├── posts/          # 文章列表與詳細頁
-│   │   ├── albums/         # 相簿
-│   │   └── tags/           # 標籤頁
-│   ├── admin/              # 管理後台（需驗證）
-│   │   ├── posts/          # 文章管理
-│   │   ├── albums/         # 相簿管理
-│   │   └── settings/       # 主題與播放器設定
-│   └── api/                # API Routes
+├── app/
+│   ├── (blog)/                       # 前台頁面（route group）
+│   │   ├── page.tsx                  # 首頁
+│   │   ├── posts/                    # 文章列表與詳細頁
+│   │   ├── tags/, categories/        # 分類 / 標籤索引與篩選頁
+│   │   ├── archive/[year]/[month]/   # 月份歸檔頁
+│   │   └── search/                   # 搜尋頁
+│   ├── admin/
+│   │   ├── login/                    # 登入頁（不受 (authed) 包覆）
+│   │   ├── (authed)/                 # 受保護的 admin 殼
+│   │   │   ├── layout.tsx            # 含頂部 nav / 登出
+│   │   │   ├── page.tsx              # Dashboard
+│   │   │   ├── posts/{,new,[id]/edit}/
+│   │   │   ├── categories/, tags/    # 分類 / 標籤管理
+│   │   ├── preview/                  # 預覽頁（不繼承 (authed) 殼，但仍受 proxy 鑑權）
+│   │   └── actions.ts                # logout server action
+│   ├── robots.ts, sitemap.ts
+│   └── layout.tsx                    # 根 layout（fonts / theme init）
 ├── components/
-│   ├── ui/                 # 基礎 UI 元件（Button、Input 等）
-│   ├── blog/               # 文章相關元件
-│   ├── album/              # 相簿相關元件
-│   ├── player/             # 音樂播放器元件
-│   └── layout/             # Header、Footer、Sidebar
+│   ├── admin/                        # 後台專用：PostForm、TiptapEditor、FigureNodeView 等
+│   ├── blog/                         # 文章 / 列表 / Sidebar 用元件
+│   ├── layout/                       # Header / Footer / Sidebar / SearchBar
+│   └── ui/                           # SectionHeading / ThemeToggle
 ├── lib/
-│   ├── supabase/           # Supabase client 與查詢
-│   ├── utils/              # 工具函式
-│   └── types/              # TypeScript 型別定義
-├── styles/
-│   └── themes/             # CSS Variables 主題定義
-├── public/                 # 靜態資源
-└── docs/
-    └── blog-spec.md        # 產品規格書
+│   ├── supabase/
+│   │   ├── server.ts                 # 公開讀取（anon key, no cookies）
+│   │   ├── server-auth.ts            # cookie-aware（Server Component / Server Action 用）
+│   │   ├── admin.ts                  # service role（bypass RLS, server-only）
+│   │   ├── client.ts                 # 瀏覽器端
+│   │   ├── middleware.ts             # session refresh + admin route guard
+│   │   └── queries/                  # posts.ts / tags.ts / admin-posts.ts
+│   ├── utils/                        # slugify / format / reading-time / sanitize-html / decode-param / dedupe-figure-images
+│   └── types/                        # post / tag / category
+├── proxy.ts                          # Next 16 proxy（即過去的 middleware.ts）
+├── supabase/
+│   ├── migrations/
+│   │   ├── 0001_init.sql
+│   │   └── 0002_storage_blog_images.sql
+│   └── seed.sql
+├── styles/themes/                    # base.css / light.css / dark.css
+└── docs/                             # blog-spec / ARCHITECTURE / DATABASE
 ```
 
 ---
@@ -96,24 +115,27 @@
 ## 開發指令
 
 ```bash
-npm run dev        # 啟動開發伺服器（http://localhost:3000）
+npm run dev        # 啟動開發伺服器（http://localhost:3000，Turbopack）
 npm run build      # 建置生產版本
 npm run start      # 啟動生產伺服器
 npm run lint       # ESLint 檢查
-npm run typecheck  # TypeScript 型別檢查
+# typecheck：直接跑 npx tsc --noEmit（package.json 沒有獨立指令）
 ```
 
 ---
 
 ## 環境變數
 
-需要在 `.env.local` 設定以下變數（不要把實際值 commit 進 git）：
+本地開發在 `.env.local`、Vercel 部署在 Settings → Environment Variables 設定（Production / Preview / Development 三個都要勾）：
 
 ```
+NEXT_PUBLIC_SITE_URL=          # 本機 http://localhost:3000；Vercel 用 production canonical URL
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=     # server-only，僅 lib/supabase/admin.ts 使用，不可洩漏到 client bundle
 ```
+
+`.env.local.example` 是模板（沒含真值，已 commit）。
 
 ---
 
@@ -132,58 +154,50 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ## 當前開發階段
 
-**現在是 Phase 1（MVP）**
+**Phase 1 + Phase 2 主要功能均已完成並部署到 Vercel。**
 
-### Phase 1 範圍（請專注在這裡）
-- [ ] 專案初始化（Next.js + TypeScript + Tailwind + Supabase）
-- [ ] 資料庫 schema 建立（文章、標籤）
-- [ ] 首頁（文章列表）
-- [ ] 文章詳細頁（Markdown 渲染 + 語法高亮）
-- [ ] 標籤系統
-- [ ] 深色 / 淺色主題切換
-- [ ] 響應式設計
-- [ ] SEO：Meta Tags、robots.txt、基本 Sitemap
-- [ ] Vercel 部署設定
+### Phase 1（MVP） — ✅ 已完成
+- [x] Next.js + TypeScript + Tailwind + Supabase 初始化
+- [x] 資料庫 schema（posts / categories / tags / post_tags + RLS + index）
+- [x] 首頁文章列表
+- [x] 文章詳細頁（Tiptap 輸出的 sanitized HTML）
+- [x] 分類 + 標籤系統（每篇一分類、可多標籤）
+- [x] 月份歸檔頁（`/archive/[year]/[month]`）
+- [x] 簡易搜尋頁（ILIKE，全文搜尋強化排 Phase 2-D）
+- [x] 深色 / 淺色主題切換（CSS Variables + localStorage）
+- [x] 響應式設計
+- [x] SEO：metadata、robots.txt、sitemap.xml
+- [x] Vercel 部署
 
-### 尚未開始的階段（暫不處理）
-- Phase 2：管理後台、搜尋、RSS、Open Graph
-- Phase 3：留言、按讚、相簿
-- Phase 4：音樂播放器、主題切換系統
-- Phase 5：JSON-LD、效能優化
+### Phase 2 — 進行中
+- [x] **2-A**：Supabase Auth、`/admin/login`、proxy.ts 路由保護、Dashboard 殼
+- [x] **2-B**：文章 CRUD（後來把 Markdown 編輯器升級為 Tiptap WYSIWYG）
+- [x] **2-C**：封面圖 / 內文圖片上傳到 Supabase Storage（`blog-images` bucket）
+- [x] 分類 / 標籤後台管理頁（`/admin/categories`、`/admin/tags`，rename + delete）
+- [x] 文章預覽功能（`/admin/preview?key=...`，localStorage 暫存）
+- [ ] **2-D**：全文搜尋（tsvector）、RSS Feed、動態 Open Graph 圖
+
+### 尚未開始的階段
+- Phase 3：留言、按讚、相簿、燈箱
+- Phase 4：音樂播放器、主題切換系統、主題微調面板
+- Phase 5：JSON-LD、效能優化、Search Console 提交
 
 ---
 
-## Supabase 資料庫 Schema（Phase 1）
+## Supabase 資料庫 Schema
 
-```sql
--- 文章
-create table posts (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  slug text unique not null,
-  content text not null,         -- Markdown 原始內容
-  excerpt text,                  -- 摘要
-  cover_image text,              -- 封面圖 URL
-  published boolean default false,
-  published_at timestamptz,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+完整 schema、RLS、Index、查詢範例請見 **`docs/DATABASE.md`**。
 
--- 標籤
-create table tags (
-  id uuid primary key default gen_random_uuid(),
-  name text unique not null,
-  slug text unique not null
-);
+可執行的 migration / seed 檔在 **`supabase/migrations/`** 目錄：
+- `0001_init.sql`：posts / categories / tags / post_tags + RLS + index
+- `0002_storage_blog_images.sql`：Storage bucket + 公開讀取 policy
+- `seed.sql`：示範種子資料（已被使用者清掉，新文章透過後台建立）
 
--- 文章標籤關聯
-create table post_tags (
-  post_id uuid references posts(id) on delete cascade,
-  tag_id  uuid references tags(id) on delete cascade,
-  primary key (post_id, tag_id)
-);
-```
+關鍵點：
+- `posts.content` 儲存 **HTML**（不是 Markdown），由 Tiptap 編輯器產生 + DOMPurify 清洗
+- `posts.category_id` 為必填外鍵 (`ON DELETE RESTRICT`) — 每篇文章只屬於一個分類
+- 公開 RLS：未登入只能讀 `published = true` 的文章，分類 / 標籤皆公開讀取
+- 寫入 / 刪除：透過 server action 用 `service_role` key 繞過 RLS（`lib/supabase/admin.ts`）
 
 ---
 
