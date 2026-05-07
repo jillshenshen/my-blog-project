@@ -181,19 +181,23 @@ body {
   margin-right: 0;
 }
 
-/* 編輯器內：選中時的浮動工具列 placeholder */
+/* 編輯器內：figcaption 樣式 */
 .figure-block figure[data-type="figure"] figcaption {
   position: relative;
+  min-height: 1.4em;
+  cursor: text;
 }
-.figure-block figure[data-type="figure"] figcaption .ProseMirror-trailingBreak {
-  display: none;
+.figure-block figure[data-type="figure"] figcaption.figure-caption {
+  /* 空白時顯示 placeholder span（由 React 條件渲染） */
 }
-.figure-block figure[data-type="figure"] figcaption:has(p:empty)::before,
-.figure-block figure[data-type="figure"] figcaption:empty::before {
-  content: attr(data-placeholder);
-  color: var(--color-fg-subtle);
+.figure-caption-placeholder {
+  position: absolute;
+  inset: 0;
+  text-align: center;
   font-style: italic;
+  color: var(--color-fg-subtle);
   pointer-events: none;
+  user-select: none;
 }
 
 /* Figure 選取狀態（image 容器 + 8 個方塊 handle） */

@@ -164,7 +164,15 @@ export function FigureNodeView({
             </>
           ) : null}
         </div>
-        <figcaption data-placeholder="新增說明文字">
+        <figcaption className="figure-caption">
+          {node.content.size === 0 ? (
+            <span
+              contentEditable={false}
+              className="figure-caption-placeholder"
+            >
+              新增說明文字
+            </span>
+          ) : null}
           <NodeViewContent />
         </figcaption>
       </figure>
