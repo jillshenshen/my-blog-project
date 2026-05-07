@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Extension } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -13,6 +14,49 @@ import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
 import { uploadImageAction } from "@/app/admin/(authed)/posts/upload-action";
+
+// FontSize：透過 TextStyle 的 globalAttribute 增加 fontSize attr + 提供 commands
+// (Tiptap v3 已宣告 setFontSize/unsetFontSize 型別，但 runtime 預設沒實作)
+const FontSize = Extension.create({
+  name: "fontSize",
+  addOptions() {
+    return { types: ["textStyle"] };
+  },
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element) =>
+              (element as HTMLElement).style.fontSize?.replace(/['"]+/g, "") ||
+              null,
+            renderHTML: (attributes) => {
+              if (!attributes.fontSize) return {};
+              return { style: `font-size: ${attributes.fontSize}` };
+            },
+          },
+        },
+      },
+    ];
+  },
+  addCommands() {
+    return {
+      setFontSize:
+        (size: string) =>
+        ({ chain }) =>
+          chain().setMark("textStyle", { fontSize: size }).run(),
+      unsetFontSize:
+        () =>
+        ({ chain }) =>
+          chain()
+            .setMark("textStyle", { fontSize: null })
+            .removeEmptyTextStyle()
+            .run(),
+    };
+  },
+});
 
 type Props = {
   name: string;
@@ -546,6 +590,7 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       TextStyle,
       Color,
       FontFamily,
+      FontSize,
       Image.configure({
         inline: false,
         allowBase64: false,
