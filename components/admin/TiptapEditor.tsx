@@ -24,15 +24,25 @@ const labelClass =
 const activeClass =
   "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-accent";
 
-const COLOR_SWATCHES = [
-  { name: "預設", value: null },
-  { name: "薄荷綠", value: "#6cb39e" },
-  { name: "紅", value: "#e15555" },
-  { name: "橘", value: "#e89b3a" },
-  { name: "黃", value: "#d4b021" },
-  { name: "藍", value: "#3a82e8" },
-  { name: "紫", value: "#9461d9" },
-  { name: "灰", value: "#8a8a8a" },
+// 8x8 Blogger 風格色票（grayscale + 鮮豔 + 6 級色階 ×8 色相）
+const COLOR_PALETTE: string[][] = [
+  ["#000000", "#434343", "#666666", "#999999", "#b7b7b7", "#cccccc", "#efefef", "#ffffff"],
+  ["#e53935", "#fb8c00", "#fdd835", "#43a047", "#00acc1", "#1e88e5", "#5e35b1", "#d81b60"],
+  ["#fad4d4", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3", "#d9d2e9", "#ead1dc"],
+  ["#f4a4a4", "#f9cb9c", "#ffe599", "#b6d7a8", "#a2c4c9", "#9fc5e8", "#b4a7d6", "#d5a6bd"],
+  ["#e06666", "#f6b26b", "#ffd966", "#93c47d", "#76a5af", "#6fa8dc", "#8e7cc3", "#c27ba0"],
+  ["#cc4125", "#e69138", "#f1c232", "#6aa84f", "#45818e", "#3d85c6", "#674ea7", "#a64d79"],
+  ["#a61c00", "#b45f06", "#bf9000", "#38761d", "#134f5c", "#0b5394", "#351c75", "#741b47"],
+  ["#5b0f00", "#783f04", "#7f6000", "#274e13", "#0c343d", "#073763", "#20124d", "#4c1130"],
+];
+
+const FONT_SIZE_OPTIONS: { label: string; value: string | null }[] = [
+  { label: "最小", value: "0.625rem" }, // 10px
+  { label: "小", value: "0.875rem" }, // 14px
+  { label: "一般", value: null }, // inherit (16px default)
+  { label: "中", value: "1.125rem" }, // 18px
+  { label: "大", value: "1.5rem" }, // 24px
+  { label: "最大", value: "2rem" }, // 32px
 ];
 
 // 每組 font-family 都有英 + 繁中 fallback，瀏覽器會依字元逐一挑選
@@ -146,21 +156,133 @@ function ColorPicker({ editor }: { editor: Editor }) {
         />
       </button>
       {open ? (
-        <div className="absolute top-full left-0 z-20 mt-1 grid w-44 grid-cols-4 gap-1.5 border border-[var(--color-border)] bg-background p-2 shadow-md">
-          {COLOR_SWATCHES.map((s) => (
+        <div className="absolute top-full left-0 z-20 mt-1 w-72 border border-[var(--color-border)] bg-background p-3 shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] tracking-[0.2em] text-muted uppercase">
+              選取顏色
+            </span>
             <button
-              key={s.name}
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => pick(s.value)}
-              title={s.name}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-[var(--color-border)] transition hover:border-foreground"
-              style={{
-                background: s.value ?? "transparent",
-                color: s.value ? "#fff" : "var(--color-fg)",
-              }}
+              onClick={() => pick(null)}
+              className="cursor-pointer text-[10px] tracking-[0.2em] text-muted uppercase transition hover:text-foreground"
             >
-              {s.value === null ? "×" : ""}
+              重設
+            </button>
+          </div>
+
+          <div className="grid grid-cols-8 gap-1.5">
+            {COLOR_PALETTE.flat().map((color) => {
+              const active = current?.toLowerCase() === color.toLowerCase();
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pick(color)}
+                  title={color}
+                  className={`relative h-6 w-6 cursor-pointer rounded-full border transition ${
+                    active
+                      ? "border-foreground ring-2 ring-foreground"
+                      : "border-[var(--color-border)] hover:scale-110"
+                  }`}
+                  style={{ background: color }}
+                  aria-label={color}
+                >
+                  {active ? (
+                    <span
+                      className="absolute inset-0 flex items-center justify-center text-[10px]"
+                      style={{
+                        color:
+                          parseInt(color.slice(1), 16) > 0xaaaaaa
+                            ? "#000"
+                            : "#fff",
+                      }}
+                    >
+                      ✓
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex items-center gap-3 border-t border-[var(--color-border)] pt-3">
+            <label
+              className="flex cursor-pointer items-center gap-2 text-[10px] tracking-[0.2em] text-muted uppercase"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] text-base">
+                +
+              </span>
+              <span>自訂顏色</span>
+              <input
+                type="color"
+                onChange={(e) => pick(e.target.value)}
+                className="h-0 w-0 opacity-0"
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SizePicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const currentSize =
+    (editor.getAttributes("textStyle").fontSize as string | undefined) ?? null;
+  const currentLabel =
+    FONT_SIZE_OPTIONS.find((o) => o.value === currentSize)?.label ?? "一般";
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(value: string | null) {
+    if (value === null) editor.chain().focus().unsetFontSize().run();
+    else editor.chain().focus().setFontSize(value).run();
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="文字大小"
+        aria-label="文字大小"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span className="text-[10px] text-muted">大小</span>
+        <span>{currentLabel}</span>
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 w-32 border border-[var(--color-border)] bg-background py-1 shadow-md">
+          {FONT_SIZE_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(opt.value)}
+              className={`flex w-full cursor-pointer items-center justify-between px-3 py-2 transition hover:bg-[var(--color-surface)] ${
+                (currentSize ?? null) === opt.value
+                  ? "text-accent"
+                  : "text-foreground"
+              }`}
+              style={{ fontSize: opt.value ?? "1rem" }}
+            >
+              <span>{opt.label}</span>
+              {(currentSize ?? null) === opt.value ? (
+                <span className="text-[10px]">✓</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -311,6 +433,7 @@ function Toolbar({
       >
         <s>S</s>
       </ToolbarBtn>
+      <SizePicker editor={editor} />
       <ColorPicker editor={editor} />
       <FontPicker editor={editor} />
       <ToolbarBtn
