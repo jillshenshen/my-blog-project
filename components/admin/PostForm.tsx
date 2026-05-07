@@ -30,6 +30,43 @@ export function PostForm({
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
 
+  function onPreview(e: React.MouseEvent<HTMLButtonElement>) {
+    const form = e.currentTarget.closest("form");
+    if (!form) return;
+    const fd = new FormData(form);
+
+    const tagIds = String(fd.get("tagIds") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const categoryId = String(fd.get("categoryId") ?? "");
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category) {
+      alert("請先選擇分類再預覽");
+      return;
+    }
+
+    const data = {
+      title: String(fd.get("title") ?? "").trim(),
+      content: String(fd.get("content") ?? ""),
+      coverImage: String(fd.get("coverImage") ?? "").trim() || null,
+      publishedAt: initial?.publishedAt ?? new Date().toISOString(),
+      category: { name: category.name, slug: category.slug },
+      tags: allTags
+        .filter((t) => tagIds.includes(t.id))
+        .map((t) => ({ id: t.id, name: t.name, slug: t.slug })),
+    };
+
+    const key = crypto.randomUUID();
+    try {
+      localStorage.setItem(`post-preview-${key}`, JSON.stringify(data));
+    } catch {
+      alert("預覽資料寫入失敗（localStorage 滿了？）");
+      return;
+    }
+    window.open(`/admin/preview?key=${key}`, "_blank", "noopener,noreferrer");
+  }
+
   function onTitleChange(v: string) {
     setTitle(v);
     if (!slugTouched) setSlug(slugify(v));
@@ -180,6 +217,13 @@ export function PostForm({
         >
           Cancel
         </a>
+        <button
+          type="button"
+          onClick={onPreview}
+          className="cursor-pointer border border-[var(--color-border)] px-5 py-2.5 text-[11px] tracking-[0.3em] text-foreground uppercase transition hover:border-foreground"
+        >
+          Preview
+        </button>
         <button
           type="submit"
           className="cursor-pointer border border-[var(--color-accent)] px-6 py-2.5 text-[11px] tracking-[0.3em] text-accent uppercase transition hover:bg-[var(--color-accent)] hover:text-background"
