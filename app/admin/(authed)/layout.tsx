@@ -45,6 +45,12 @@ export default async function AuthedAdminLayout({
                 POSTS
               </Link>
               <Link
+                href="/admin/categories"
+                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
+              >
+                CATEGORIES
+              </Link>
+              <Link
                 href="/admin/tags"
                 className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
               >
