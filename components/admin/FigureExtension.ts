@@ -53,6 +53,14 @@ export const Figure = Node.create({
           (el as HTMLElement).getAttribute("data-size") ?? "medium",
         renderHTML: (attrs) => ({ "data-size": attrs.size }),
       },
+      width: {
+        default: null as string | null,
+        parseHTML: (el) => (el as HTMLElement).style.width || null,
+        renderHTML: (attrs) => {
+          if (!attrs.width) return {};
+          return { style: `width: ${attrs.width}; max-width: 100%;` };
+        },
+      },
     };
   },
 

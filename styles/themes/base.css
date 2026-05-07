@@ -228,6 +228,21 @@ body {
   pointer-events: none;
   z-index: 1;
 }
+.figure-handle-active {
+  pointer-events: auto;
+}
+.figure-handle-tl.figure-handle-active,
+.figure-handle-br.figure-handle-active {
+  cursor: nwse-resize;
+}
+.figure-handle-tr.figure-handle-active,
+.figure-handle-bl.figure-handle-active {
+  cursor: nesw-resize;
+}
+.figure-handle-ml.figure-handle-active,
+.figure-handle-mr.figure-handle-active {
+  cursor: ew-resize;
+}
 .figure-handle-tl { top: -6px; left: -6px; }
 .figure-handle-tc { top: -6px; left: calc(50% - 5px); }
 .figure-handle-tr { top: -6px; right: -6px; }
