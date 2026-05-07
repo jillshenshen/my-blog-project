@@ -25,11 +25,24 @@ const ALIGN_OPTIONS: {
   { value: "right", label: "靠右", icon: "⊫" },
 ];
 
+const HANDLE_POSITIONS = [
+  "tl",
+  "tc",
+  "tr",
+  "ml",
+  "mr",
+  "bl",
+  "bc",
+  "br",
+] as const;
+
 export function FigureNodeView({
   node,
   updateAttributes,
   selected,
   deleteNode,
+  editor,
+  getPos,
 }: NodeViewProps) {
   const align = (node.attrs.align as string) ?? "center";
   const size = (node.attrs.size as string) ?? "medium";
@@ -47,21 +60,45 @@ export function FigureNodeView({
     return () => document.removeEventListener("mousedown", onClick);
   }, [sizeOpen]);
 
+  function selectMe(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof getPos === "function") {
+      const pos = getPos();
+      if (typeof pos === "number") {
+        editor.chain().setNodeSelection(pos).run();
+      }
+    }
+  }
+
   return (
     <NodeViewWrapper
       data-figure-wrapper
-      className="figure-block"
+      className={`figure-block ${selected ? "is-selected" : ""}`}
       data-align={align}
       data-size={size}
     >
       <figure data-type="figure" data-align={align} data-size={size}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          className={selected ? "ring-2 ring-[var(--color-accent)]" : ""}
-          draggable={false}
-        />
+        <div
+          className="figure-image-container"
+          onMouseDown={selectMe}
+          onClick={selectMe}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={alt} draggable={false} />
+          {selected ? (
+            <>
+              <div className="figure-overlay" aria-hidden />
+              {HANDLE_POSITIONS.map((p) => (
+                <span
+                  key={p}
+                  className={`figure-handle figure-handle-${p}`}
+                  aria-hidden
+                />
+              ))}
+            </>
+          ) : null}
+        </div>
         <figcaption data-placeholder="新增說明文字">
           <NodeViewContent />
         </figcaption>
@@ -70,7 +107,7 @@ export function FigureNodeView({
       {selected ? (
         <div
           contentEditable={false}
-          className="mt-2 inline-flex items-center gap-1 border border-[var(--color-border)] bg-background px-2 py-1.5 shadow-md"
+          className="figure-toolbar mt-2 inline-flex items-center gap-1 border border-[var(--color-border)] bg-background px-2 py-1.5 shadow-md"
         >
           {/* Alignment */}
           {ALIGN_OPTIONS.map((opt) => {

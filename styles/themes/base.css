@@ -196,6 +196,47 @@ body {
   pointer-events: none;
 }
 
+/* Figure 選取狀態（image 容器 + 8 個方塊 handle） */
+.figure-image-container {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+.figure-image-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.figure-block.is-selected .figure-image-container {
+  cursor: move;
+}
+.figure-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(59, 130, 246, 0.25);
+  border: 2px solid #3b82f6;
+  pointer-events: none;
+}
+.figure-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border: 1.5px solid #3b82f6;
+  pointer-events: none;
+  z-index: 1;
+}
+.figure-handle-tl { top: -6px; left: -6px; }
+.figure-handle-tc { top: -6px; left: calc(50% - 5px); }
+.figure-handle-tr { top: -6px; right: -6px; }
+.figure-handle-ml { top: calc(50% - 5px); left: -6px; }
+.figure-handle-mr { top: calc(50% - 5px); right: -6px; }
+.figure-handle-bl { bottom: -6px; left: -6px; }
+.figure-handle-bc { bottom: -6px; left: calc(50% - 5px); }
+.figure-handle-br { bottom: -6px; right: -6px; }
+
 /* Tiptap task list */
 .markdown ul[data-type="taskList"] {
   list-style: none;
