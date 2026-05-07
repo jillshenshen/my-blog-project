@@ -13,6 +13,7 @@ import Underline from "@tiptap/extension-underline";
 import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
+import { Figure } from "@/components/admin/FigureExtension";
 import { uploadImageAction } from "@/app/admin/(authed)/posts/upload-action";
 
 // FontSize：透過 TextStyle 的 globalAttribute 增加 fontSize attr + 提供 commands
@@ -635,7 +636,7 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
         fd.append("file", file);
         const result = await uploadImageAction(fd);
         if (result.ok) {
-          editor.chain().focus().setImage({ src: result.url }).run();
+          editor.chain().focus().insertFigure({ src: result.url }).run();
         } else {
           alert(`上傳失敗：${result.error}`);
         }
@@ -656,11 +657,13 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       Color,
       FontFamily,
       FontSize,
+      // 舊文章相容用：保留 Image 解析既有 <img>，新插入一律走 Figure
       Image.configure({
         inline: false,
         allowBase64: false,
         HTMLAttributes: { class: "my-6 max-w-full" },
       }),
+      Figure,
       Link.configure({
         openOnClick: false,
         autolink: true,

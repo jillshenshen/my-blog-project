@@ -125,6 +125,77 @@ body {
   margin: 2em 0;
 }
 
+/* Figure (image with optional caption) */
+.markdown figure[data-type="figure"] {
+  margin: 1.5em auto;
+  display: block;
+}
+.markdown figure[data-type="figure"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.markdown figure[data-type="figure"] figcaption {
+  margin-top: 0.6em;
+  font-size: 0.85em;
+  color: var(--color-fg-muted);
+  text-align: center;
+  font-style: italic;
+}
+.markdown figure[data-type="figure"] figcaption:empty {
+  display: none;
+}
+
+/* Sizes */
+.markdown figure[data-type="figure"][data-size="small"] {
+  max-width: 30%;
+}
+.markdown figure[data-type="figure"][data-size="medium"] {
+  max-width: 60%;
+}
+.markdown figure[data-type="figure"][data-size="large"] {
+  max-width: 85%;
+}
+.markdown figure[data-type="figure"][data-size="xlarge"] {
+  max-width: 100%;
+}
+.markdown figure[data-type="figure"][data-size="original"] {
+  max-width: none;
+}
+.markdown figure[data-type="figure"][data-size="original"] img {
+  width: auto;
+}
+
+/* Alignment */
+.markdown figure[data-type="figure"][data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+.markdown figure[data-type="figure"][data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+.markdown figure[data-type="figure"][data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 編輯器內：選中時的浮動工具列 placeholder */
+.figure-block figure[data-type="figure"] figcaption {
+  position: relative;
+}
+.figure-block figure[data-type="figure"] figcaption .ProseMirror-trailingBreak {
+  display: none;
+}
+.figure-block figure[data-type="figure"] figcaption:has(p:empty)::before,
+.figure-block figure[data-type="figure"] figcaption:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-fg-subtle);
+  font-style: italic;
+  pointer-events: none;
+}
+
 /* Tiptap task list */
 .markdown ul[data-type="taskList"] {
   list-style: none;

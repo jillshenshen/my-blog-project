@@ -20,6 +20,8 @@ const ALLOWED_TAGS = [
   "li",
   "a",
   "img",
+  "figure",
+  "figcaption",
   "hr",
   "span",
   "label",
