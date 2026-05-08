@@ -39,7 +39,11 @@ import Underline from "@tiptap/extension-underline";
 import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
+import { Highlight } from "@tiptap/extension-highlight";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Youtube } from "@tiptap/extension-youtube";
 import { Figure } from "@/components/admin/FigureExtension";
+import { Indent } from "@/components/admin/IndentExtension";
 import { uploadImageAction } from "@/app/admin/(authed)/posts/upload-action";
 
 // FontSize：透過 TextStyle 的 globalAttribute 增加 fontSize attr + 提供 commands
@@ -313,6 +317,263 @@ function ColorPicker({ editor }: { editor: Editor }) {
   );
 }
 
+function HighlightPicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current =
+    (editor.getAttributes("highlight").color as string) ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(color: string | null) {
+    if (color === null) editor.chain().focus().unsetHighlight().run();
+    else editor.chain().focus().setHighlight({ color }).run();
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="背景顏色"
+        aria-label="背景顏色"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span
+          className="rounded px-1 font-serif"
+          style={{ background: current ?? "transparent" }}
+        >
+          A
+        </span>
+        <span className="text-[10px] text-muted">背景</span>
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 w-72 border border-[var(--color-border)] bg-background p-3 shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] tracking-[0.2em] text-muted uppercase">
+              背景顏色
+            </span>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(null)}
+              className="cursor-pointer text-[10px] tracking-[0.2em] text-muted uppercase transition hover:text-foreground"
+            >
+              無
+            </button>
+          </div>
+
+          <div className="grid grid-cols-8 gap-1.5">
+            {COLOR_PALETTE.flat().map((color) => {
+              const active = current?.toLowerCase() === color.toLowerCase();
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pick(color)}
+                  title={color}
+                  className={`relative h-6 w-6 cursor-pointer rounded-full border transition ${
+                    active
+                      ? "border-foreground ring-2 ring-foreground"
+                      : "border-[var(--color-border)] hover:scale-110"
+                  }`}
+                  style={{ background: color }}
+                  aria-label={color}
+                />
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex items-center gap-3 border-t border-[var(--color-border)] pt-3">
+            <label className="flex cursor-pointer items-center gap-2 text-[10px] tracking-[0.2em] text-muted uppercase">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] text-base">
+                +
+              </span>
+              <span>自訂顏色</span>
+              <input
+                type="color"
+                onChange={(e) => pick(e.target.value)}
+                className="h-0 w-0 opacity-0"
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type Align = "left" | "center" | "right" | "justify";
+const ALIGN_OPTIONS: { label: string; value: Align; icon: string }[] = [
+  { label: "靠左對齊", value: "left", icon: "≡L" },
+  { label: "置中對齊", value: "center", icon: "≡C" },
+  { label: "靠右對齊", value: "right", icon: "≡R" },
+  { label: "左右對齊", value: "justify", icon: "≡J" },
+];
+
+function AlignPicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const currentValue =
+    (ALIGN_OPTIONS.find((o) => editor.isActive({ textAlign: o.value }))
+      ?.value as Align | undefined) ?? "left";
+  const currentLabel =
+    ALIGN_OPTIONS.find((o) => o.value === currentValue)?.label ?? "對齊";
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(value: Align) {
+    editor.chain().focus().setTextAlign(value).run();
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="對齊"
+        aria-label="對齊"
+        className={`${labelClass} flex items-center gap-1 ${open ? activeClass : ""}`}
+      >
+        <span className="font-mono text-xs">≡</span>
+        <span className="text-[10px] text-muted">{currentLabel.slice(0, 2)}</span>
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 w-36 border border-[var(--color-border)] bg-background py-1 shadow-md">
+          {ALIGN_OPTIONS.map((opt) => {
+            const active = opt.value === currentValue;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(opt.value)}
+                className={`flex w-full cursor-pointer items-center gap-2 px-3 py-2 transition hover:bg-[var(--color-surface)] ${
+                  active ? "text-accent" : "text-foreground"
+                }`}
+              >
+                <span className="font-mono text-xs">{opt.icon}</span>
+                <span className="flex-1 text-left text-sm">{opt.label}</span>
+                {active ? <span className="text-[10px]">✓</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const SPECIAL_CHARS: { label: string; chars: string[] }[] = [
+  {
+    label: "標點",
+    chars: [
+      "—", "–", "…", "·", "•",
+      "“", "”", "‘", "’",
+      "「", "」", "『", "』",
+      "《", "》", "〈", "〉",
+      "（", "）", "【", "】",
+    ],
+  },
+  {
+    label: "符號",
+    chars: ["©", "®", "™", "§", "¶", "†", "‡", "№", "℃", "℉", "°", "%", "‰", "&", "@", "#"],
+  },
+  {
+    label: "箭頭",
+    chars: ["←", "→", "↑", "↓", "↔", "↕", "⇐", "⇒", "⇑", "⇓", "⇔", "↰", "↱", "↲", "↳", "↺", "↻", "➤"],
+  },
+  {
+    label: "數學",
+    chars: ["±", "×", "÷", "≈", "≠", "≤", "≥", "∞", "√", "∑", "∏", "∫", "π", "Δ", "Ω", "α", "β", "γ"],
+  },
+  {
+    label: "貨幣",
+    chars: ["$", "€", "£", "¥", "₩", "₹", "₽", "¢"],
+  },
+  {
+    label: "形狀",
+    chars: ["★", "☆", "♥", "♡", "♦", "♣", "♠", "●", "○", "◆", "◇", "■", "□", "▲", "△", "▼", "▽", "✓", "✗", "✦"],
+  },
+];
+
+function SpecialCharPicker({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  function pick(ch: string) {
+    editor.chain().focus().insertContent(ch).run();
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        title="特殊字元"
+        aria-label="特殊字元"
+        className={`${labelClass} ${open ? activeClass : ""}`}
+      >
+        Ω
+      </button>
+      {open ? (
+        <div className="absolute top-full left-0 z-20 mt-1 max-h-96 w-80 overflow-y-auto border border-[var(--color-border)] bg-background p-3 shadow-lg">
+          {SPECIAL_CHARS.map((group) => (
+            <div key={group.label} className="mb-3 last:mb-0">
+              <div className="mb-1.5 text-[10px] tracking-[0.2em] text-muted uppercase">
+                {group.label}
+              </div>
+              <div className="grid grid-cols-9 gap-1">
+                {group.chars.map((ch) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pick(ch)}
+                    title={ch}
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-transparent text-base transition hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]"
+                  >
+                    {ch}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SizePicker({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -537,6 +798,22 @@ function Toolbar({
       .run();
   }, [editor]);
 
+  const insertVideo = useCallback(() => {
+    const url = window.prompt(
+      "貼上 YouTube 連結（watch / youtu.be / embed 都可以）",
+      "https://",
+    );
+    if (!url) return;
+    const ok = editor
+      .chain()
+      .focus()
+      .setYoutubeVideo({ src: url.trim() })
+      .run();
+    if (!ok) {
+      alert("無法解析這個 YouTube 連結，請確認格式");
+    }
+  }, [editor]);
+
   return (
     <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border border-[var(--color-border)] border-b-0 bg-background px-2 py-1.5">
       <StylePicker editor={editor} />
@@ -571,6 +848,7 @@ function Toolbar({
       </ToolbarBtn>
       <SizePicker editor={editor} />
       <ColorPicker editor={editor} />
+      <HighlightPicker editor={editor} />
       <FontPicker editor={editor} />
       <ToolbarBtn
         title="行內程式碼"
@@ -590,6 +868,10 @@ function Toolbar({
       <ToolbarBtn title="插入圖片" onClick={onUploadImage}>
         🖼️
       </ToolbarBtn>
+      <ToolbarBtn title="插入 YouTube 影片" onClick={insertVideo}>
+        ▶
+      </ToolbarBtn>
+      <SpecialCharPicker editor={editor} />
       <Divider />
       <ToolbarBtn
         title="條列清單"
@@ -611,6 +893,20 @@ function Toolbar({
         onClick={() => editor.chain().focus().toggleTaskList().run()}
       >
         ☑
+      </ToolbarBtn>
+      <Divider />
+      <AlignPicker editor={editor} />
+      <ToolbarBtn
+        title="減少縮排"
+        onClick={() => editor.chain().focus().outdent().run()}
+      >
+        ⇤
+      </ToolbarBtn>
+      <ToolbarBtn
+        title="增加縮排"
+        onClick={() => editor.chain().focus().indent().run()}
+      >
+        ⇥
       </ToolbarBtn>
       <Divider />
       <ToolbarBtn
@@ -683,6 +979,18 @@ export function TiptapEditor({ name, defaultValue = "" }: Props) {
       Color,
       FontFamily,
       FontSize,
+      Highlight.configure({ multicolor: true }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+        alignments: ["left", "center", "right", "justify"],
+      }),
+      Youtube.configure({
+        inline: false,
+        controls: true,
+        nocookie: true,
+        HTMLAttributes: { class: "my-6 w-full" },
+      }),
+      Indent,
       // 舊文章相容用：保留 Image 解析既有 <img>（不在 figure 裡的），新插入一律走 Figure
       NestedAwareImage.configure({
         inline: false,

@@ -22,6 +22,10 @@ const FILTER_TABS: { label: string; value: AdminPostFilter }[] = [
   { label: "草稿", value: "draft" },
 ];
 
+function isFutureIso(iso: string): boolean {
+  return new Date(iso).getTime() > Date.now();
+}
+
 type SearchParams = {
   status?: AdminPostFilter;
   notice?: string;
@@ -92,7 +96,19 @@ export default async function AdminPostsPage({
         </p>
       ) : (
         <ul className="divide-y divide-[var(--color-border)]">
-          {posts.map((post) => (
+          {posts.map((post) => {
+            const isScheduled = post.published && isFutureIso(post.publishedAt);
+            const statusLabel = isScheduled
+              ? "Scheduled"
+              : post.published
+                ? "Published"
+                : "Draft";
+            const statusClass = isScheduled
+              ? "bg-amber-500/10 text-amber-500"
+              : post.published
+                ? "bg-[var(--color-accent)]/10 text-accent"
+                : "bg-[var(--color-border)] text-muted";
+            return (
             <li
               key={post.id}
               className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between"
@@ -100,13 +116,9 @@ export default async function AdminPostsPage({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
                   <span
-                    className={`inline-block rounded-full px-2 py-0.5 text-[9px] tracking-[0.2em] uppercase ${
-                      post.published
-                        ? "bg-[var(--color-accent)]/10 text-accent"
-                        : "bg-[var(--color-border)] text-muted"
-                    }`}
+                    className={`inline-block rounded-full px-2 py-0.5 text-[9px] tracking-[0.2em] uppercase ${statusClass}`}
                   >
-                    {post.published ? "Published" : "Draft"}
+                    {statusLabel}
                   </span>
                   <Link
                     href={`/admin/posts/${post.id}/edit`}
@@ -154,7 +166,8 @@ export default async function AdminPostsPage({
                 />
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

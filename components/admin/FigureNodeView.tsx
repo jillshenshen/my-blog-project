@@ -49,6 +49,7 @@ export function FigureNodeView({
   const align = (node.attrs.align as string) ?? "center";
   const size = (node.attrs.size as string) ?? "medium";
   const widthAttr = (node.attrs.width as string | null) ?? null;
+  const rounded = node.attrs.rounded !== false;
   const src = node.attrs.src as string;
   const alt = (node.attrs.alt as string) ?? "";
   const [sizeOpen, setSizeOpen] = useState(false);
@@ -130,6 +131,7 @@ export function FigureNodeView({
         data-type="figure"
         data-align={align}
         data-size={size}
+        data-rounded={rounded ? undefined : "false"}
         style={
           widthAttr
             ? { width: widthAttr, maxWidth: "100%" }
@@ -246,6 +248,24 @@ export function FigureNodeView({
               </div>
             ) : null}
           </div>
+
+          <span className="mx-1 h-5 w-px bg-[var(--color-border)]" />
+
+          {/* Rounded toggle */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => updateAttributes({ rounded: !rounded })}
+            title={rounded ? "切換為直角" : "切換為圓角"}
+            aria-label={rounded ? "切換為直角" : "切換為圓角"}
+            className={`cursor-pointer rounded border px-2 py-1 text-xs transition ${
+              rounded
+                ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-accent"
+                : "border-transparent text-foreground hover:border-[var(--color-border)]"
+            }`}
+          >
+            {rounded ? "◖圓" : "◻直"}
+          </button>
 
           <span className="mx-1 h-5 w-px bg-[var(--color-border)]" />
 

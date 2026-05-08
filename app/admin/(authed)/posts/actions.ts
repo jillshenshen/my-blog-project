@@ -28,6 +28,7 @@ type PostFormFields = {
   categoryId: string;
   tagIds: string[];
   published: boolean;
+  publishedAtIso: string | null;
 };
 
 function parseForm(formData: FormData): PostFormFields {
@@ -42,6 +43,13 @@ function parseForm(formData: FormData): PostFormFields {
     .filter(Boolean);
 
   const rawContent = String(formData.get("content") ?? "");
+  const publishedAtRaw = String(formData.get("publishedAtIso") ?? "").trim();
+  const publishedAtIso = (() => {
+    if (!publishedAtRaw) return null;
+    const d = new Date(publishedAtRaw);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  })();
+
   return {
     title,
     slug,
@@ -51,6 +59,7 @@ function parseForm(formData: FormData): PostFormFields {
     categoryId: String(formData.get("categoryId") ?? ""),
     tagIds,
     published: formData.get("published") === "on",
+    publishedAtIso,
   };
 }
 
@@ -100,6 +109,9 @@ export async function createPostAction(formData: FormData) {
   }
 
   const supabase = getSupabaseAdmin();
+  const publishedAt = fields.published
+    ? (fields.publishedAtIso ?? new Date().toISOString())
+    : null;
   const { data, error: insertError } = await supabase
     .from("posts")
     .insert({
@@ -110,7 +122,7 @@ export async function createPostAction(formData: FormData) {
       cover_image: fields.coverImage,
       category_id: fields.categoryId,
       published: fields.published,
-      published_at: fields.published ? new Date().toISOString() : null,
+      published_at: publishedAt,
     })
     .select("id, slug")
     .single();
@@ -146,17 +158,18 @@ export async function updatePostAction(id: string, formData: FormData) {
 
   const supabase = getSupabaseAdmin();
 
-  // 撈舊狀態判斷 published_at 要不要更新
   const { data: existing } = await supabase
     .from("posts")
     .select("published, published_at, slug")
     .eq("id", id)
     .single();
 
-  const newlyPublished = fields.published && !existing?.published;
-  const publishedAt = newlyPublished
-    ? new Date().toISOString()
-    : (existing?.published_at ?? null);
+  // 用戶若沒填 publishedAtIso，沿用既有值；都沒有才退回現在
+  const publishedAt = fields.published
+    ? (fields.publishedAtIso ??
+       existing?.published_at ??
+       new Date().toISOString())
+    : null;
 
   const { error: updateError } = await supabase
     .from("posts")
@@ -168,7 +181,7 @@ export async function updatePostAction(id: string, formData: FormData) {
       cover_image: fields.coverImage,
       category_id: fields.categoryId,
       published: fields.published,
-      published_at: fields.published ? publishedAt : null,
+      published_at: publishedAt,
     })
     .eq("id", id);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Category } from "@/lib/types/category";
 import type { Tag } from "@/lib/types/tag";
 import type { Post } from "@/lib/types/post";
@@ -18,6 +18,21 @@ type Props = {
   errorMessage?: string;
 };
 
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+    d.getDate(),
+  )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function isScheduledIso(iso: string): boolean {
+  if (!iso) return false;
+  return new Date(iso).getTime() > Date.now();
+}
+
 export function PostForm({
   mode,
   categories,
@@ -29,6 +44,30 @@ export function PostForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
+  // 初始只取 server / client 都一致的固定值（既有 ISO 或空字串）；
+  // 「現在」交給 useEffect 在 client mount 後填，避免 server 用 UTC、client 用本地時區造成 hydration mismatch
+  const [publishedAtLocal, setPublishedAtLocal] = useState(() =>
+    initial?.publishedAt ? isoToLocalInput(initial.publishedAt) : "",
+  );
+  useEffect(() => {
+    // mount 後用 client 本地時區重算
+    // - edit：把既有 ISO 用本地時區轉成 datetime-local 字串（避免 server UTC 結果）
+    // - new：填入「現在」（client 本地時區）
+    if (initial?.publishedAt) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPublishedAtLocal(isoToLocalInput(initial.publishedAt));
+    } else {
+      setPublishedAtLocal((curr) =>
+        curr ? curr : isoToLocalInput(new Date().toISOString()),
+      );
+    }
+  }, [initial?.publishedAt]);
+  const publishedAtIso = (() => {
+    if (!publishedAtLocal) return "";
+    const d = new Date(publishedAtLocal);
+    return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+  })();
+  const isScheduled = isScheduledIso(publishedAtIso);
 
   function onPreview(e: React.MouseEvent<HTMLButtonElement>) {
     const form = e.currentTarget.closest("form");
@@ -188,10 +227,47 @@ export function PostForm({
               defaultChecked={initial?.published ?? false}
               className="h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
             />
-            <span>立即發布</span>
+            <span>發布</span>
             <span className="text-subtle">（未勾選為草稿）</span>
           </label>
         </div>
+      </div>
+
+      {/* 發布時間 / 排程 */}
+      <div className="space-y-2">
+        <label
+          htmlFor="publishedAtLocal"
+          className="text-[10px] tracking-[0.3em] text-muted uppercase"
+        >
+          Publish Date / Time
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            id="publishedAtLocal"
+            type="datetime-local"
+            value={publishedAtLocal}
+            onChange={(e) => setPublishedAtLocal(e.target.value)}
+            className="h-10 border border-[var(--color-border)] bg-surface px-3 font-mono text-sm text-foreground outline-none transition focus:border-[var(--color-accent)]"
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setPublishedAtLocal(isoToLocalInput(new Date().toISOString()))
+            }
+            className="cursor-pointer text-[10px] tracking-[0.3em] text-muted uppercase transition hover:text-foreground"
+          >
+            重設為現在
+          </button>
+          {isScheduled ? (
+            <span className="border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/5 px-2 py-0.5 text-[10px] tracking-[0.2em] text-accent uppercase">
+              Scheduled
+            </span>
+          ) : null}
+        </div>
+        <p className="text-[10px] text-subtle">
+          ※ 未來時間 + 已勾選發布 = 排程到該時間才公開；過去時間 = 回填顯示日期。
+        </p>
+        <input type="hidden" name="publishedAtIso" value={publishedAtIso} />
       </div>
 
       {/* Tags */}

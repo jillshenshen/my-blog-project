@@ -13,6 +13,7 @@ declare module "@tiptap/core" {
         alt?: string;
         align?: FigureAlign;
         size?: FigureSize;
+        rounded?: boolean;
       }) => ReturnType;
     };
   }
@@ -61,6 +62,13 @@ export const Figure = Node.create({
           return { style: `width: ${attrs.width}; max-width: 100%;` };
         },
       },
+      rounded: {
+        default: true,
+        parseHTML: (el) =>
+          (el as HTMLElement).getAttribute("data-rounded") !== "false",
+        renderHTML: (attrs) =>
+          attrs.rounded === false ? { "data-rounded": "false" } : {},
+      },
     };
   },
 
@@ -94,6 +102,7 @@ export const Figure = Node.create({
                 alt: attrs.alt ?? "",
                 align: attrs.align ?? "center",
                 size: attrs.size ?? "medium",
+                rounded: attrs.rounded ?? true,
               },
               content: [],
             })

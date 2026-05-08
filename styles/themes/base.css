@@ -136,6 +136,9 @@ body {
   height: auto;
   border-radius: 4px;
 }
+.markdown figure[data-type="figure"][data-rounded="false"] img {
+  border-radius: 0;
+}
 .markdown figure[data-type="figure"] figcaption {
   margin-top: 0.6em;
   font-size: 0.85em;
@@ -277,6 +280,43 @@ body {
   cursor: default;
   accent-color: var(--color-accent);
 }
+
+/* Highlight (背景顏色) */
+.markdown mark {
+  background: var(--color-accent);
+  color: inherit;
+  padding: 0.05em 0.2em;
+  border-radius: 2px;
+}
+
+/* YouTube embed wrapper — 16:9 響應式 */
+.markdown div[data-youtube-video] {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1.5em 0;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.markdown div[data-youtube-video] iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* 段落 / 標題縮排（自訂 Indent extension）每級 2em */
+.markdown [data-indent="1"] { margin-left: 2em; }
+.markdown [data-indent="2"] { margin-left: 4em; }
+.markdown [data-indent="3"] { margin-left: 6em; }
+.markdown [data-indent="4"] { margin-left: 8em; }
+.markdown [data-indent="5"] { margin-left: 10em; }
+.markdown [data-indent="6"] { margin-left: 12em; }
+.markdown [data-indent="7"] { margin-left: 14em; }
+.markdown [data-indent="8"] { margin-left: 16em; }
 
 /* Tiptap selection / placeholder */
 .ProseMirror:focus {

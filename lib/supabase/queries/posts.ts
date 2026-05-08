@@ -26,6 +26,12 @@ const POST_SELECT = `
   post_tags(tag:tags(id, name, slug))
 `;
 
+// 公開查詢一律過濾「已發布」且「published_at <= 現在」
+// → 排程文章（published=true 但 published_at 在未來）會被隱藏
+function nowIso() {
+  return new Date().toISOString();
+}
+
 function mapPost(row: PostRow): Post {
   return {
     id: row.id,
@@ -49,6 +55,7 @@ export async function getAllPosts(): Promise<Post[]> {
     .from("posts")
     .select(POST_SELECT)
     .eq("published", true)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false });
 
   if (error) throw error;
@@ -62,6 +69,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     .select(POST_SELECT)
     .eq("slug", slug)
     .eq("published", true)
+    .lte("published_at", nowIso())
     .maybeSingle();
 
   if (error) throw error;
@@ -75,6 +83,7 @@ export async function getRecentPosts(limit = 5): Promise<Post[]> {
     .from("posts")
     .select(POST_SELECT)
     .eq("published", true)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false })
     .limit(limit);
 
@@ -91,6 +100,7 @@ export async function getPostsByCategory(
     .select(POST_SELECT)
     .eq("category.slug", categorySlug)
     .eq("published", true)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false });
 
   if (error) throw error;
@@ -104,7 +114,8 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
     .from("posts")
     .select("id, post_tags!inner(tag:tags!inner(slug))")
     .eq("post_tags.tag.slug", tagSlug)
-    .eq("published", true);
+    .eq("published", true)
+    .lte("published_at", nowIso());
 
   if (e1) throw e1;
   const ids = (matched ?? []).map((row) => (row as { id: string }).id);
@@ -134,6 +145,7 @@ export async function getPostsByYearMonth(
     .eq("published", true)
     .gte("published_at", start)
     .lt("published_at", end)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false });
 
   if (error) throw error;
@@ -150,6 +162,7 @@ export async function searchPosts(query: string): Promise<Post[]> {
     .from("posts")
     .select(POST_SELECT)
     .eq("published", true)
+    .lte("published_at", nowIso())
     .or(
       `title.ilike.${pattern},excerpt.ilike.${pattern},content.ilike.${pattern}`,
     )
@@ -172,6 +185,7 @@ export async function getArchive(): Promise<ArchiveEntry[]> {
     .from("posts")
     .select("published_at")
     .eq("published", true)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false });
 
   if (error) throw error;
