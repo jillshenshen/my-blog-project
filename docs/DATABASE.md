@@ -50,7 +50,7 @@ create table posts (
   cover_image  text,                   -- 封面圖 URL（來自 Supabase Storage `blog-images` bucket）
   category_id  uuid references categories(id) on delete restrict not null,
   published    boolean default false,
-  published_at timestamptz,
+  published_at timestamptz,            -- 使用者可指定（過去 = 回填、未來 = 排程）
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
@@ -58,6 +58,11 @@ create table posts (
 -- 早期規劃為 Markdown，Phase 2-B 改用 Tiptap WYSIWYG 後改為 sanitized HTML。
 -- 寫入路徑：app/admin/(authed)/posts/actions.ts → sanitizeContentHtml() → dedupeFigureImages()
 -- 讀取路徑：components/blog/HtmlContent.tsx → dangerouslySetInnerHTML
+--
+-- 排程發布語意（lib/supabase/queries/posts.ts）：
+-- 公開查詢一律 .eq("published", true).lte("published_at", now())
+-- → published=true 但 published_at 在未來 = 排程，前台到時間前不顯示
+-- → published=false 永遠是草稿（published_at 為 null）
 
 -- 自動更新 updated_at
 create or replace function update_updated_at()
@@ -374,9 +379,13 @@ music/{filename}.mp3                   ← 自上傳音樂檔（如有）
 
 ## 常用查詢範例
 
+> ⚠️ 公開查詢一律加 `.lte("published_at", new Date().toISOString())`，
+> 把 `published=true` 但 `published_at` 在未來的排程文章排除掉。
+
 ### 取得文章列表（含分類與標籤）
 
 ```typescript
+const nowIso = new Date().toISOString();
 const { data } = await supabase
   .from('posts')
   .select(`
@@ -385,12 +394,14 @@ const { data } = await supabase
     post_tags(tags(id, name, slug))
   `)
   .eq('published', true)
+  .lte('published_at', nowIso)
   .order('published_at', { ascending: false })
 ```
 
 ### 取得單篇文章
 
 ```typescript
+const nowIso = new Date().toISOString();
 const { data } = await supabase
   .from('posts')
   .select(`
@@ -400,27 +411,32 @@ const { data } = await supabase
   `)
   .eq('slug', slug)
   .eq('published', true)
+  .lte('published_at', nowIso)
   .single()
 ```
 
 ### 取得分類下的所有文章
 
 ```typescript
+const nowIso = new Date().toISOString();
 const { data } = await supabase
   .from('posts')
   .select(`*, category:categories!inner(slug)`)
   .eq('category.slug', categorySlug)
   .eq('published', true)
+  .lte('published_at', nowIso)
 ```
 
 ### 取得標籤下的所有文章
 
 ```typescript
+const nowIso = new Date().toISOString();
 const { data } = await supabase
   .from('post_tags')
   .select(`posts(*), tags!inner(slug)`)
   .eq('tags.slug', tagSlug)
   .eq('posts.published', true)
+  .lte('posts.published_at', nowIso)
 ```
 
 ### 取得文章按讚數

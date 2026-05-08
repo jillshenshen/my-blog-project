@@ -1,8 +1,8 @@
 # 個人技術部落格 產品規格書（PRD）
 
-> **文件版本：** v1.1
+> **文件版本：** v1.2
 > **建立日期：** 2026 年 4 月 28 日
-> **最後更新：** 2026 年 5 月 7 日
+> **最後更新：** 2026 年 5 月 8 日
 > **文件狀態：** Phase 1 + Phase 2 主要功能完成並上線
 
 ---
@@ -34,7 +34,7 @@
 | 資料庫 | Supabase (PostgreSQL) | 文章、分類、標籤、（未來）留言/按讚 |
 | 檔案儲存 | Supabase Storage `blog-images` bucket | 封面圖 + 內文圖片，10MB / 張上限 |
 | 身份驗證 | Supabase Auth + `@supabase/ssr` | 管理員 Email/密碼登入，cookie session |
-| 文章編輯器 | Tiptap v3 | WYSIWYG，支援字型 / 顏色 / 大小 / 圖片對齊 / 圖說 |
+| 文章編輯器 | Tiptap v3 | WYSIWYG，支援字型 / 文字顏色 / 背景顏色 / 大小 / 文字對齊 / 縮排 / 圖片對齊 + 圓角切換 / 圖說 / YouTube 影片 / 特殊字元 |
 | 內容儲存格式 | sanitized HTML | 不存 Markdown；Tiptap 輸出 + DOMPurify 白名單 |
 | 部署平台 | Vercel | GitHub 自動部署 |
 | 音樂播放 | Spotify Embed (Phase 4) | 合法嵌入，免版權風險 |
@@ -141,10 +141,11 @@
 #### 3.6.2 文章管理（已完成）
 
 - ✅ 新增 / 編輯 / 刪除文章 (`/admin/posts/{,new,[id]/edit}`)
-- ✅ Tiptap WYSIWYG 編輯器（標題分級 / 粗體 / 斜體 / 底線 / 刪除線 / 字型 / 文字大小 / 顏色 / 連結 / 圖片 / 清單 / 待辦 / 引用 / 程式碼 / 分隔線 / undo-redo）
+- ✅ Tiptap WYSIWYG 編輯器（標題分級 / 粗體 / 斜體 / 底線 / 刪除線 / 字型 / 文字大小 / 文字顏色 / **背景顏色** / 連結 / 圖片 / **YouTube 影片** / **特殊字元** / 清單 / 待辦 / 引用 / 程式碼 / 分隔線 / **文字對齊** / **增/減縮排** / undo-redo）
 - ✅ 圖片上傳：拖拉 / Cmd+V / 工具列按鈕 → 自動傳到 Supabase Storage
-- ✅ 圖片可調整對齊（左/中/右）+ 5 級尺寸 + 拖拉 resize + 圖說文字
+- ✅ 圖片可調整對齊（左/中/右）+ 5 級尺寸 + 拖拉 resize + **圓/直角切換** + 圖說文字
 - ✅ 標題、摘要、封面圖、分類、多標籤、發布狀態
+- ✅ **排程發布**：可指定 `published_at`（過去 = 回填、未來 = 排程到該時間才公開）
 - ✅ 預覽：點 Preview 開新分頁 `/admin/preview?key=...`，不需先存檔
 - ✅ 分類管理 `/admin/categories`（新增/rename/delete）
 - ✅ 標籤管理 `/admin/tags`（rename/delete；建立可在文章表單裡直接新增）
@@ -208,8 +209,12 @@
 | 文章列表頁 | 文章 | P0 | Phase 1 | ✅ |
 | 文章詳細頁 | 文章 | P0 | Phase 1 | ✅ |
 | Tiptap WYSIWYG 編輯器 | 後台 | P0 | Phase 2-B | ✅ |
-| 圖片上傳 + 對齊 + resize + 圖說 | 後台 | P0 | Phase 2-C | ✅ |
-| 字型 / 顏色 / 文字大小 工具列 | 後台 | P1 | Phase 2-B | ✅ |
+| 圖片上傳 + 對齊 + resize + 圓/直角 + 圖說 | 後台 | P0 | Phase 2-C | ✅ |
+| 字型 / 顏色 / 背景色 / 文字大小 工具列 | 後台 | P1 | Phase 2-B | ✅ |
+| 文字對齊 + 增/減縮排 | 後台 | P1 | Phase 2-B | ✅ |
+| YouTube 影片嵌入（src 限信任 host） | 後台 | P1 | Phase 2-B | ✅ |
+| 特殊字元 popup（標點/符號/箭頭/數學/貨幣/形狀） | 後台 | P2 | Phase 2-B | ✅ |
+| 排程發布（datetime-local + 前台 lte 過濾） | 後台 | P1 | Phase 2-B | ✅ |
 | 分類系統（每篇 1 分類） | 文章 | P0 | Phase 1 | ✅ |
 | 標籤系統（每篇可多 tag） | 文章 | P0 | Phase 1 | ✅ |
 | 月份歸檔頁（年/月折疊） | 文章 | P1 | Phase 1 | ✅ |

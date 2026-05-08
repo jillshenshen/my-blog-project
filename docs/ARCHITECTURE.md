@@ -152,7 +152,7 @@ middleware.ts 攔截
 | `components/ui/` | 基礎共用元件 | `SectionHeading.tsx`、`ThemeToggle.tsx` |
 | `components/blog/` | 前台文章相關 | `ArticleCard.tsx`、`PostArticle.tsx`、`HtmlContent.tsx`、`BlogArchive.tsx`、`RecentPosts.tsx`、`TaxonomyList.tsx` |
 | `components/layout/` | 版面 | `Header.tsx`、`Footer.tsx`、`Sidebar.tsx`、`SearchBar.tsx` |
-| `components/admin/` | 後台 | `PostForm.tsx`、`TiptapEditor.tsx`、`FigureExtension.ts`、`FigureNodeView.tsx`、`TagsField.tsx`、`CoverImageField.tsx`、`DeletePostButton.tsx`、`TagAdminRow.tsx`、`CategoryAdminRow.tsx` |
+| `components/admin/` | 後台 | `PostForm.tsx`、`TiptapEditor.tsx`、`FigureExtension.ts`、`FigureNodeView.tsx`、`IndentExtension.ts`、`TagsField.tsx`、`CoverImageField.tsx`、`DeletePostButton.tsx`、`TagAdminRow.tsx`、`CategoryAdminRow.tsx` |
 | `components/album/`、`components/player/` | Phase 3 / Phase 4 | ⏳ |
 
 ### `lib/` — 核心邏輯
@@ -164,7 +164,7 @@ middleware.ts 攔截
 | `lib/supabase/admin.ts` | service role client（bypass RLS, server-only）— 後台寫入、Storage 上傳 |
 | `lib/supabase/client.ts` | 瀏覽器端 client（Phase 2 起暫無使用，預留 realtime 用） |
 | `lib/supabase/middleware.ts` | proxy session refresh + admin route guard |
-| `lib/supabase/queries/posts.ts` | 公開文章查詢（getAllPosts / getPostBySlug / 等） |
+| `lib/supabase/queries/posts.ts` | 公開文章查詢（getAllPosts / getPostBySlug / 等）— 一律加 `.eq("published", true).lte("published_at", now)`，排程未到時間的文章不會出現在前台 |
 | `lib/supabase/queries/tags.ts` | 公開分類 + 標籤查詢 |
 | `lib/supabase/queries/admin-posts.ts` | 後台文章查詢（含草稿，用 admin client） |
 | `lib/types/` | post.ts / tag.ts / category.ts |
@@ -242,6 +242,12 @@ proxy.ts (root, Next 16 — 即過去的 middleware.ts) 負責：
 Tiptap getHTML() → 透過 hidden input 進 FormData
   → server action 讀 FormData
   → sanitizeContentHtml() (DOMPurify 白名單)
+       ├─ 放行 tag：p / br / 文字 marks / heading / list / a / img / figure /
+       │           figcaption / hr / span / label / input / mark / iframe / div
+       ├─ data-* 屬性全放行（task list / Figure data-align/size/rounded /
+       │                     data-indent / data-youtube-video 都靠這條）
+       └─ uponSanitizeElement hook：iframe 的 src 必須是
+          youtube.com / youtube-nocookie.com / player.vimeo.com，否則整個 element 移除
   → dedupeFigureImages()  (清掉 figure 內 img 同 src 的孤立 raw img)
   → 寫入 posts.content (text)
 
