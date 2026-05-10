@@ -15,7 +15,7 @@ export function ArticleCard({ post }: Props) {
   const readingTime = calculateReadingTime(post.content);
 
   return (
-    <article className="border-b border-[var(--color-border)] px-6 py-10 sm:px-12 sm:py-14">
+    <article className="border-b border-[var(--color-border)] px-6 pt-8 pb-10 sm:px-12 sm:pb-14">
       <header className="text-center">
         <Link
           href={`/categories/${post.category.slug}`}
@@ -24,7 +24,7 @@ export function ArticleCard({ post }: Props) {
           {post.category.name}
         </Link>
 
-        <h2 className="mt-3 font-serif text-3xl text-foreground sm:text-4xl">
+        <h2 className="mt-3 font-title font-normal text-2xl text-foreground sm:text-3xl">
           <Link href={`/posts/${post.slug}`} className="hover:text-muted">
             {post.title}
           </Link>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseServerWithAuth } from "@/lib/supabase/server-auth";
 import { logoutAction } from "@/app/admin/actions";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
 
 export default async function AuthedAdminLayout({
   children,
@@ -17,6 +18,8 @@ export default async function AuthedAdminLayout({
   // 雙保險：middleware 已擋過，這裡若還是無 user 就 redirect（防 race）
   if (!user) redirect("/admin/login");
 
+  const { title } = await getSiteSettings();
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-[var(--color-border)] bg-background">
@@ -26,7 +29,7 @@ export default async function AuthedAdminLayout({
               href="/admin"
               className="font-script text-2xl text-foreground"
             >
-              Jill&apos;s blog
+              {title}
             </Link>
             <span className="hidden text-[10px] tracking-[0.3em] text-accent uppercase sm:inline">
               Admin
@@ -55,6 +58,12 @@ export default async function AuthedAdminLayout({
                 className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
               >
                 TAGS
+              </Link>
+              <Link
+                href="/admin/settings"
+                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
+              >
+                SETTINGS
               </Link>
             </nav>
           </div>

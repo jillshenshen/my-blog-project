@@ -38,7 +38,7 @@ export function PostArticle({ post, isPreview = false }: Props) {
         >
           {post.category.name}
         </Link>
-        <h1 className="mt-3 font-serif text-4xl text-foreground sm:text-5xl">
+        <h1 className="mt-3 font-title font-normal text-3xl text-foreground sm:text-4xl">
           {post.title || "（未填標題）"}
         </h1>
         <p className="mt-3 text-[10px] tracking-[0.3em] text-muted uppercase">
