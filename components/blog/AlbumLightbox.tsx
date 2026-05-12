@@ -55,7 +55,7 @@ export function AlbumLightbox({ images }: Props) {
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
         {images.map((img, idx) => (
           <li key={img.id}>
             <button

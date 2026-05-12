@@ -14,7 +14,8 @@ export async function Sidebar() {
   ]);
 
   return (
-    <aside className="space-y-10">
+    // lg 以上整個側邊欄視覺縮為 90%（保留原本欄寬，內容向右上對齊）
+    <aside className="space-y-10 lg:origin-top-right lg:scale-[0.9]">
       <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
         <SectionHeading>About me</SectionHeading>
         <div className="mt-6 flex flex-col items-center text-center">
