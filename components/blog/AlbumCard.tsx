@@ -27,7 +27,7 @@ export function AlbumCard({ album }: Props) {
           </div>
         )}
       </div>
-      <p className="mt-3 px-1 font-serif text-sm text-foreground transition group-hover:text-muted sm:text-base">
+      <p className="mt-2 px-1 font-serif text-xs text-foreground transition group-hover:text-muted sm:text-sm">
         {album.title}
       </p>
     </Link>

@@ -50,14 +50,14 @@ export default async function AlbumDetailPage({
   if (!album) notFound();
 
   return (
-    <article>
+    <article className="mx-auto max-w-4xl">
       <header className="border-b border-[var(--color-border)] pb-6">
         <p className="text-[10px] tracking-[0.3em] text-muted uppercase">
           <Link href="/albums" className="hover:text-foreground">
             ← Albums
           </Link>
         </p>
-        <h1 className="mt-3 font-serif text-3xl text-foreground sm:text-4xl">
+        <h1 className="mt-3 font-serif text-xl text-foreground sm:text-2xl">
           {album.title}
         </h1>
         {album.description ? (

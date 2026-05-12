@@ -7,6 +7,8 @@ export default function BlogLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // (blog) 群組的頁面（首頁 / posts / tags / categories / archive / search）皆有側邊欄
+  // 相簿不在此群組，使用 app/albums/layout.tsx（無側邊欄、滿版）
   return (
     <>
       <Header />

@@ -22,20 +22,17 @@ export default async function AlbumsListPage({
   const { albums, totalPages, page } = await getAlbumsPage(pageNum, PER_PAGE);
 
   return (
-    <div>
-      <header className="border-b border-[var(--color-border)] pb-6">
-        <p className="text-[10px] tracking-[0.3em] text-muted uppercase">
+    <div className="mx-auto max-w-4xl">
+      <header className="border-b border-[var(--color-border)] pb-4">
+        <h1 className="text-xs tracking-[0.3em] text-muted uppercase">
           Albums
-        </p>
-        <h1 className="mt-2 font-serif text-3xl text-foreground sm:text-4xl">
-          相簿
         </h1>
       </header>
 
       {albums.length === 0 ? (
         <p className="py-20 text-center text-sm text-muted">目前還沒有相簿。</p>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {albums.map((album) => (
             <AlbumCard key={album.id} album={album} />
           ))}
@@ -43,7 +40,7 @@ export default async function AlbumsListPage({
       )}
 
       {totalPages > 1 ? (
-        <nav className="mt-12 flex items-center justify-center gap-4 text-[11px] tracking-[0.2em] uppercase">
+        <nav className="mt-10 flex items-center justify-center gap-4 text-[11px] tracking-[0.2em] uppercase">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
             const active = p === page;
             return (
