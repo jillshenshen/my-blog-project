@@ -141,8 +141,7 @@ middleware.ts 攔截
 | `app/sitemap.ts` | 自動產生 Sitemap（含分類 / 標籤 / 月份） | ✅ |
 | `app/robots.ts` | robots.txt | ✅ |
 | `app/layout.tsx` | 根 layout（fonts、theme init script、metadata） | ✅ |
-| `app/api/og/route.ts` | 動態 OG 圖（Phase 2-D） | ⏳ |
-| `app/feed.xml/route.ts` | RSS Feed（Phase 2-D） | ⏳ |
+| `app/(blog)/posts/[slug]/opengraph-image.tsx` | 動態 OG 圖（next/og + Google Fonts subset） | ✅ |
 | `proxy.ts` (root) | Next 16 proxy（前身：middleware.ts），保護 /admin/* 路由 | ✅ |
 
 ### `components/` — UI 元件

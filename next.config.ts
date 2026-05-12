@@ -5,9 +5,11 @@ const supabaseHost = SUPABASE_URL ? new URL(SUPABASE_URL).hostname : undefined;
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Next 16 proxy（前身 middleware）預設只放行 10MB body，相簿多檔上傳需要更大
+    proxyClientMaxBodySize: "60mb",
     serverActions: {
-      // 對應 upload-action 的 10MB 圖片上限，留一點 buffer 給 multipart overhead
-      bodySizeLimit: "12mb",
+      // 單檔仍限 10MB（在 action 內驗證），但相簿多檔批次上傳時 multipart body 會更大
+      bodySizeLimit: "60mb",
     },
   },
   images: {

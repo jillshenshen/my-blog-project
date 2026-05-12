@@ -156,20 +156,31 @@ export async function searchPosts(query: string): Promise<Post[]> {
   const q = query.trim();
   if (!q) return [];
   const supabase = getSupabaseServer();
-  const pattern = `%${q}%`;
 
+  // 透過 RPC 呼叫 search_posts（tsvector + ts_rank，含短查詢 ILIKE 退回）
+  const { data: matched, error: e1 } = await supabase.rpc("search_posts", {
+    q,
+  });
+  if (e1) throw e1;
+
+  const ids: string[] = ((matched ?? []) as { id: string }[]).map((r) => r.id);
+  if (ids.length === 0) return [];
+
+  // 再撈一次拿 category / tags 關聯
   const { data, error } = await supabase
     .from("posts")
     .select(POST_SELECT)
-    .eq("published", true)
-    .lte("published_at", nowIso())
-    .or(
-      `title.ilike.${pattern},excerpt.ilike.${pattern},content.ilike.${pattern}`,
-    )
-    .order("published_at", { ascending: false });
-
+    .in("id", ids);
   if (error) throw error;
-  return (data as unknown as PostRow[]).map(mapPost);
+
+  // 保留 RPC 回傳的排序（ts_rank desc, published_at desc）
+  const orderMap = new Map<string, number>(
+    ids.map((id, idx) => [id, idx] as const),
+  );
+  const rows = (data as unknown as PostRow[]).slice().sort(
+    (a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0),
+  );
+  return rows.map(mapPost);
 }
 
 export type ArchiveMonthEntry = { month: number; count: number };

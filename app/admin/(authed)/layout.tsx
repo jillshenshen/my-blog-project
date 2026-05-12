@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { getSupabaseServerWithAuth } from "@/lib/supabase/server-auth";
-import { logoutAction } from "@/app/admin/actions";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
 
 export default async function AuthedAdminLayout({
@@ -21,78 +19,8 @@ export default async function AuthedAdminLayout({
   const { title } = await getSiteSettings();
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-[var(--color-border)] bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-6">
-            <Link
-              href="/admin"
-              className="font-script text-2xl text-foreground"
-            >
-              {title}
-            </Link>
-            <span className="hidden text-[10px] tracking-[0.3em] text-accent uppercase sm:inline">
-              Admin
-            </span>
-            <nav className="hidden items-center gap-5 sm:flex">
-              <Link
-                href="/admin"
-                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
-              >
-                DASHBOARD
-              </Link>
-              <Link
-                href="/admin/posts"
-                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
-              >
-                POSTS
-              </Link>
-              <Link
-                href="/admin/categories"
-                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
-              >
-                CATEGORIES
-              </Link>
-              <Link
-                href="/admin/tags"
-                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
-              >
-                TAGS
-              </Link>
-              <Link
-                href="/admin/settings"
-                className="text-xs tracking-[0.2em] text-foreground transition hover:text-muted"
-              >
-                SETTINGS
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              target="_blank"
-              className="hidden text-[11px] tracking-[0.2em] text-muted uppercase transition hover:text-foreground sm:inline"
-            >
-              View Site ↗
-            </Link>
-            <span className="hidden text-xs text-muted sm:inline">
-              {user.email}
-            </span>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="cursor-pointer text-[11px] tracking-[0.2em] text-foreground uppercase transition hover:text-accent"
-              >
-                Logout
-              </button>
-            </form>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">{children}</main>
-    </div>
+    <AdminShell siteTitle={title} userEmail={user.email ?? ""}>
+      {children}
+    </AdminShell>
   );
 }
