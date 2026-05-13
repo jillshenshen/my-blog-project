@@ -14,4 +14,5 @@ export type Post = {
   updatedAt: string;
   category: Category;
   tags: Tag[];
+  commentCount?: number;
 };

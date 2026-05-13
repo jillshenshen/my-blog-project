@@ -6,6 +6,11 @@ import {
   calculateReadingTime,
   formatReadingTime,
 } from "@/lib/utils/reading-time";
+import { ShareInline } from "@/components/blog/ShareInline";
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+).replace(/\/$/, "");
 
 type Props = {
   post: Post;
@@ -15,7 +20,7 @@ export function ArticleCard({ post }: Props) {
   const readingTime = calculateReadingTime(post.content);
 
   return (
-    <article className="border-b border-[var(--color-border)] px-6 pt-8 pb-10 sm:px-12 sm:pb-14">
+    <article className="border-b border-[var(--color-border)] px-6 pt-8 pb-5 sm:px-12">
       <header className="text-center">
         <Link
           href={`/categories/${post.category.slug}`}
@@ -74,6 +79,19 @@ export function ArticleCard({ post }: Props) {
           ))}
         </div>
       ) : null}
+
+      <footer className="mt-10 flex items-center justify-between">
+        <Link
+          href={`/posts/${post.slug}#comments`}
+          className="text-[10px] tracking-[0.3em] text-muted uppercase transition hover:text-foreground"
+        >
+          {post.commentCount ?? 0} Comments
+        </Link>
+        <ShareInline
+          url={`${SITE_URL}/posts/${post.slug}`}
+          title={post.title}
+        />
+      </footer>
     </article>
   );
 }

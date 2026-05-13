@@ -49,6 +49,32 @@ function mapPost(row: PostRow): Post {
   };
 }
 
+// 一次撈所有指定 post 的留言數，回傳 Map<post_id, count>
+// 若 comments 表還沒建（migration 未跑）會悄悄退回空 map，不影響列表渲染
+async function fetchCommentCounts(
+  postIds: string[],
+): Promise<Map<string, number>> {
+  if (postIds.length === 0) return new Map();
+  const supabase = getSupabaseServer();
+  const { data, error } = await supabase
+    .from("comments")
+    .select("post_id")
+    .in("post_id", postIds);
+
+  if (error) return new Map();
+
+  const map = new Map<string, number>();
+  for (const r of (data ?? []) as { post_id: string }[]) {
+    map.set(r.post_id, (map.get(r.post_id) ?? 0) + 1);
+  }
+  return map;
+}
+
+async function withCommentCounts(posts: Post[]): Promise<Post[]> {
+  const counts = await fetchCommentCounts(posts.map((p) => p.id));
+  return posts.map((p) => ({ ...p, commentCount: counts.get(p.id) ?? 0 }));
+}
+
 export async function getAllPosts(): Promise<Post[]> {
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
@@ -59,7 +85,7 @@ export async function getAllPosts(): Promise<Post[]> {
     .order("published_at", { ascending: false });
 
   if (error) throw error;
-  return (data as unknown as PostRow[]).map(mapPost);
+  return withCommentCounts((data as unknown as PostRow[]).map(mapPost));
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
@@ -104,7 +130,7 @@ export async function getPostsByCategory(
     .order("published_at", { ascending: false });
 
   if (error) throw error;
-  return (data as unknown as PostRow[]).map(mapPost);
+  return withCommentCounts((data as unknown as PostRow[]).map(mapPost));
 }
 
 export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
@@ -128,7 +154,7 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
     .order("published_at", { ascending: false });
 
   if (error) throw error;
-  return (data as unknown as PostRow[]).map(mapPost);
+  return withCommentCounts((data as unknown as PostRow[]).map(mapPost));
 }
 
 export async function getPostsByYearMonth(
@@ -149,7 +175,7 @@ export async function getPostsByYearMonth(
     .order("published_at", { ascending: false });
 
   if (error) throw error;
-  return (data as unknown as PostRow[]).map(mapPost);
+  return withCommentCounts((data as unknown as PostRow[]).map(mapPost));
 }
 
 export async function searchPosts(query: string): Promise<Post[]> {
@@ -180,7 +206,53 @@ export async function searchPosts(query: string): Promise<Post[]> {
   const rows = (data as unknown as PostRow[]).slice().sort(
     (a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0),
   );
-  return rows.map(mapPost);
+  return withCommentCounts(rows.map(mapPost));
+}
+
+export type AdjacentPost = { slug: string; title: string };
+export type AdjacentPosts = {
+  previous: AdjacentPost | null;
+  next: AdjacentPost | null;
+};
+
+// 依 published_at 找前後文章（用「比較早」當 previous、「比較晚」當 next）
+export async function getAdjacentPosts(
+  currentPostId: string,
+  publishedAt: string,
+): Promise<AdjacentPosts> {
+  const supabase = getSupabaseServer();
+  const now = nowIso();
+
+  const [prevRes, nextRes] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("slug, title")
+      .eq("published", true)
+      .lte("published_at", now)
+      .lt("published_at", publishedAt)
+      .neq("id", currentPostId)
+      .order("published_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("posts")
+      .select("slug, title")
+      .eq("published", true)
+      .lte("published_at", now)
+      .gt("published_at", publishedAt)
+      .neq("id", currentPostId)
+      .order("published_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (prevRes.error) throw prevRes.error;
+  if (nextRes.error) throw nextRes.error;
+
+  return {
+    previous: (prevRes.data as AdjacentPost | null) ?? null,
+    next: (nextRes.data as AdjacentPost | null) ?? null,
+  };
 }
 
 export type ArchiveMonthEntry = { month: number; count: number };
