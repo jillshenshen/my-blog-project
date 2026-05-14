@@ -2,15 +2,18 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RecentPosts } from "@/components/blog/RecentPosts";
 import { TaxonomyList } from "@/components/blog/TaxonomyList";
 import { BlogArchive } from "@/components/blog/BlogArchive";
+import { MusicWidget } from "@/components/blog/MusicWidget";
 import { getRecentPosts, getArchive } from "@/lib/supabase/queries/posts";
 import { getAllCategories, getAllTags } from "@/lib/supabase/queries/tags";
+import { getAllTracks } from "@/lib/supabase/queries/tracks";
 
 export async function Sidebar() {
-  const [recent, categories, tags, archive] = await Promise.all([
+  const [recent, categories, tags, archive, tracks] = await Promise.all([
     getRecentPosts(5),
     getAllCategories(),
     getAllTags(),
     getArchive(),
+    getAllTracks(),
   ]);
 
   return (
@@ -59,6 +62,15 @@ export async function Sidebar() {
           <TaxonomyList items={tags} basePath="/tags" />
         </div>
       </section>
+
+      {tracks.length > 0 ? (
+        <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+          <SectionHeading>Music</SectionHeading>
+          <div className="mt-6">
+            <MusicWidget tracks={tracks} />
+          </div>
+        </section>
+      ) : null}
     </aside>
   );
 }

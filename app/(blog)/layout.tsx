@@ -9,6 +9,7 @@ export default function BlogLayout({
 }) {
   // (blog) 群組的頁面（首頁 / posts / tags / categories / archive / search）皆有側邊欄
   // 相簿不在此群組，使用 app/albums/layout.tsx（無側邊欄、滿版）
+  // 音樂播放器在 Sidebar 內（tracks 存在時自動顯示）
   return (
     <>
       <Header />

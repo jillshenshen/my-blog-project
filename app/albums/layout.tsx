@@ -6,7 +6,7 @@ export default function AlbumsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 相簿頁面滿版（無側邊欄），給 grid / 燈箱更多空間
+  // 相簿頁面滿版（無側邊欄、無音樂播放器），給 grid / 燈箱更多空間
   return (
     <>
       <Header />

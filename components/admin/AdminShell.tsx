@@ -30,6 +30,11 @@ const NAV_ITEMS: {
     match: (p) => p.startsWith("/admin/comments"),
   },
   {
+    href: "/admin/music",
+    label: "Music",
+    match: (p) => p.startsWith("/admin/music"),
+  },
+  {
     href: "/admin/categories",
     label: "Categories",
     match: (p) => p.startsWith("/admin/categories"),
