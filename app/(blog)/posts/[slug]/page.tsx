@@ -81,7 +81,7 @@ export default async function PostPage({
         <ShareInline url={url} title={post.title} />
       </footer>
 
-      <nav className="mt-6 flex items-center justify-between gap-4 bg-[var(--color-border)]/40 px-3 py-4 sm:px-4">
+      <nav className="mt-6 flex items-center justify-between gap-4 bg-[var(--color-border)] px-3 py-4 sm:px-4">
         {adjacent.previous ? (
           <Link
             href={`/posts/${adjacent.previous.slug}`}

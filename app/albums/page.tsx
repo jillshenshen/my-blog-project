@@ -23,10 +23,8 @@ export default async function AlbumsListPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="border-b border-[var(--color-border)] pb-4">
-        <h1 className="text-xs tracking-[0.3em] text-muted uppercase">
-          Albums
-        </h1>
+      <header className="bg-[var(--color-border)] px-3 py-2 text-center sm:px-4">
+        <h1 className="text-xs text-muted">Albums</h1>
       </header>
 
       {albums.length === 0 ? (

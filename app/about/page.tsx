@@ -16,13 +16,13 @@ export default async function AboutPage() {
 
   return (
     <article>
-      <header className="border-b border-[var(--color-border)] pb-8 text-center">
-        <p className="text-[10px] tracking-[0.3em] text-muted uppercase">
-          About
-        </p>
+      <header className="mx-auto w-40 bg-[var(--color-border)] px-3 py-2 text-center sm:w-48 sm:px-4">
+        <h1 className="text-xs text-muted">About</h1>
+      </header>
 
+      <div className="pb-8 text-center">
         {aboutPhoto ? (
-          <div className="mx-auto mt-6 h-40 w-40 overflow-hidden rounded-full bg-[var(--color-border)] sm:h-48 sm:w-48">
+          <div className="mx-auto mt-8 h-40 w-40 overflow-hidden rounded-full bg-[var(--color-border)] sm:h-48 sm:w-48">
             <div className="relative h-full w-full">
               <Image
                 src={aboutPhoto}
@@ -41,7 +41,7 @@ export default async function AboutPage() {
             {aboutShort}
           </p>
         ) : null}
-      </header>
+      </div>
 
       <div className="mt-10">
         {aboutLong ? (

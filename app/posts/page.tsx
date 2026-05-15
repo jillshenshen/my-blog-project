@@ -12,10 +12,8 @@ export default async function PostsPage() {
 
   return (
     <div className="grid justify-center gap-x-2 gap-y-2 [grid-template-columns:repeat(auto-fill,250px)]">
-      <header className="col-span-full mb-4 border-b border-[var(--color-border)] pb-4">
-        <h1 className="text-xs tracking-[0.3em] text-muted uppercase">
-          Posts
-        </h1>
+      <header className="col-span-full mb-4 bg-[var(--color-border)] px-3 py-2 text-center sm:px-4">
+        <h1 className="text-xs text-muted">Posts</h1>
       </header>
 
       {posts.length === 0 ? (

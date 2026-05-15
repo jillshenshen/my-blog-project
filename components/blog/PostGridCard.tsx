@@ -19,7 +19,7 @@ export function PostGridCard({ post }: Props) {
   const preview = stripHtmlToText(post.content, 200);
   return (
     // group + relative：搭配下方標題 Link 的 after 偽元素覆蓋整張卡片，讓任何位置點擊都進文章
-    <article className="group relative flex h-[360px] w-[250px] cursor-pointer flex-col bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.05)]">
+    <article className="group relative flex h-[360px] w-[250px] cursor-pointer flex-col border border-[var(--color-border)] bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.05)] [[data-theme=dark]_&]:bg-[#1d1d20]">
       <div className="relative block aspect-[3/2] w-full overflow-hidden bg-[var(--color-border)]">
         {post.coverImage ? (
           <Image

@@ -26,7 +26,7 @@ export async function Sidebar() {
   return (
     // lg 以上整個側邊欄視覺縮為 90%（保留原本欄寬，內容向右上對齊）
     <aside className="space-y-10 lg:origin-top-right lg:scale-[0.9]">
-      <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+      <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
         <SectionHeading>About me</SectionHeading>
         <div className="mt-6 flex flex-col items-center text-center">
           <div className="relative h-32 w-32 overflow-hidden rounded-full bg-[var(--color-border)]">
@@ -52,28 +52,28 @@ export async function Sidebar() {
         </div>
       </section>
 
-      <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+      <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
         <SectionHeading>Recent posts</SectionHeading>
         <div className="mt-6">
           <RecentPosts posts={recent} />
         </div>
       </section>
 
-      <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+      <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
         <SectionHeading>Blog Archive</SectionHeading>
         <div className="mt-6">
           <BlogArchive entries={archive} />
         </div>
       </section>
 
-      <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+      <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
         <SectionHeading>Categories</SectionHeading>
         <div className="mt-6">
           <TaxonomyList items={categories} basePath="/categories" />
         </div>
       </section>
 
-      <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+      <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
         <SectionHeading>Tags</SectionHeading>
         <div className="mt-6">
           <TaxonomyList items={tags} basePath="/tags" />
@@ -81,7 +81,7 @@ export async function Sidebar() {
       </section>
 
       {albums.length > 0 ? (
-        <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+        <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
           <SectionHeading>Albums</SectionHeading>
           <div className="mt-6">
             <SidebarAlbums albums={albums} />
@@ -90,7 +90,7 @@ export async function Sidebar() {
       ) : null}
 
       {tracks.length > 0 ? (
-        <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+        <section className="border border-[var(--color-border)] bg-surface px-6 py-8 [[data-theme=dark]_&]:bg-[#1d1d20]">
           <SectionHeading>Music</SectionHeading>
           <div className="mt-6">
             <MusicWidget tracks={tracks} />
