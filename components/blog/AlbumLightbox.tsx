@@ -20,6 +20,25 @@ export function AlbumLightbox({ images }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // 只接受橫向滑動（避免跟垂直捲動衝突）
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) next();
+    else prev();
+  }
 
   // 隨著每張照片依序 fade in，捲動讓該張照片可見
   useEffect(() => {
@@ -137,6 +156,8 @@ export function AlbumLightbox({ images }: Props) {
             onClick={(e) => {
               if (e.target === e.currentTarget) close();
             }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="relative h-full w-full">
               <Image

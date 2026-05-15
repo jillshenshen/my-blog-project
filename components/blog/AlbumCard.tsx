@@ -23,9 +23,9 @@ export function AlbumCard({ album }: Props) {
             No Cover
           </div>
         )}
-        {/* 底邊白字標題（淡淡陰影避免在亮色封面上看不見） */}
-        <div className="absolute inset-x-0 bottom-0 px-3 py-2">
-          <p className="truncate text-center font-serif text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] sm:text-sm">
+        {/* 左下角白字粗體標題（淡淡陰影避免在亮色封面上看不見） */}
+        <div className="absolute bottom-2 left-3 right-3">
+          <p className="truncate font-serif text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] sm:text-xs">
             {album.title}
           </p>
         </div>
