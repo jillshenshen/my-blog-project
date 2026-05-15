@@ -35,6 +35,11 @@ const NAV_ITEMS: {
     match: (p) => p.startsWith("/admin/music"),
   },
   {
+    href: "/admin/about",
+    label: "About",
+    match: (p) => p.startsWith("/admin/about"),
+  },
+  {
     href: "/admin/categories",
     label: "Categories",
     match: (p) => p.startsWith("/admin/categories"),

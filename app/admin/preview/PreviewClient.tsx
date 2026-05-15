@@ -39,23 +39,15 @@ export function PreviewClient() {
     }
   }, [key]);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 border-b border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-4 py-2 text-center text-[11px] tracking-[0.3em] text-accent uppercase">
-        Preview Mode · 此頁面僅供本機預覽，未真正發布
+  if (error) {
+    return (
+      <div className="border border-red-500/40 bg-red-500/5 px-4 py-3 text-sm text-red-500">
+        {error}
       </div>
-
-      <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
-        {error ? (
-          <div className="border border-red-500/40 bg-red-500/5 px-4 py-3 text-sm text-red-500">
-            {error}
-          </div>
-        ) : data ? (
-          <PostArticle post={data} isPreview />
-        ) : (
-          <p className="text-center text-sm text-muted">載入中…</p>
-        )}
-      </main>
-    </div>
-  );
+    );
+  }
+  if (!data) {
+    return <p className="text-center text-sm text-muted">載入中…</p>;
+  }
+  return <PostArticle post={data} isPreview />;
 }

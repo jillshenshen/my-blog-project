@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RecentPosts } from "@/components/blog/RecentPosts";
 import { TaxonomyList } from "@/components/blog/TaxonomyList";
@@ -6,15 +7,18 @@ import { MusicWidget } from "@/components/blog/MusicWidget";
 import { getRecentPosts, getArchive } from "@/lib/supabase/queries/posts";
 import { getAllCategories, getAllTags } from "@/lib/supabase/queries/tags";
 import { getAllTracks } from "@/lib/supabase/queries/tracks";
+import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
 
 export async function Sidebar() {
-  const [recent, categories, tags, archive, tracks] = await Promise.all([
-    getRecentPosts(5),
-    getAllCategories(),
-    getAllTags(),
-    getArchive(),
-    getAllTracks(),
-  ]);
+  const [recent, categories, tags, archive, tracks, settings] =
+    await Promise.all([
+      getRecentPosts(5),
+      getAllCategories(),
+      getAllTags(),
+      getArchive(),
+      getAllTracks(),
+      getSiteSettings(),
+    ]);
 
   return (
     // lg 以上整個側邊欄視覺縮為 90%（保留原本欄寬，內容向右上對齊）
@@ -22,9 +26,19 @@ export async function Sidebar() {
       <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
         <SectionHeading>About me</SectionHeading>
         <div className="mt-6 flex flex-col items-center text-center">
-          <div className="h-32 w-32 rounded-full bg-[var(--color-border)]" />
+          <div className="relative h-32 w-32 overflow-hidden rounded-full bg-[var(--color-border)]">
+            {settings.aboutPhoto ? (
+              <Image
+                src={settings.aboutPhoto}
+                alt="About me"
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            ) : null}
+          </div>
           <p className="mt-4 text-sm leading-relaxed text-muted">
-            Hi，這裡是個人技術部落格，記錄學習筆記、開發心得與生活靈感。
+            {settings.aboutShort}
           </p>
           <a
             href="/about"
