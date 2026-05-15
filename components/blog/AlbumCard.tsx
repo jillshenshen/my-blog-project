@@ -8,10 +8,7 @@ type Props = {
 
 export function AlbumCard({ album }: Props) {
   return (
-    <Link
-      href={`/albums/${album.slug}`}
-      className="group block text-center"
-    >
+    <Link href={`/albums/${album.slug}`} className="group block">
       <div className="relative aspect-square w-full overflow-hidden bg-[var(--color-border)]">
         {album.coverImage ? (
           <Image
@@ -26,10 +23,13 @@ export function AlbumCard({ album }: Props) {
             No Cover
           </div>
         )}
+        {/* 底邊白字標題（淡淡陰影避免在亮色封面上看不見） */}
+        <div className="absolute inset-x-0 bottom-0 px-3 py-2">
+          <p className="truncate text-center font-serif text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] sm:text-sm">
+            {album.title}
+          </p>
+        </div>
       </div>
-      <p className="mt-2 px-1 font-serif text-xs text-foreground transition group-hover:text-muted sm:text-sm">
-        {album.title}
-      </p>
     </Link>
   );
 }

@@ -341,6 +341,18 @@ body {
   display: none;
 }
 
+/* 相簿內頁照片漸入動畫（搭配 AlbumLightbox 用 inline animation-delay 串接） */
+@keyframes album-photo-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 [data-theme="light"] .dark-show {
   display: none;
 }

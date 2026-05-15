@@ -4,19 +4,22 @@ import { RecentPosts } from "@/components/blog/RecentPosts";
 import { TaxonomyList } from "@/components/blog/TaxonomyList";
 import { BlogArchive } from "@/components/blog/BlogArchive";
 import { MusicWidget } from "@/components/blog/MusicWidget";
+import { SidebarAlbums } from "@/components/blog/SidebarAlbums";
 import { getRecentPosts, getArchive } from "@/lib/supabase/queries/posts";
 import { getAllCategories, getAllTags } from "@/lib/supabase/queries/tags";
 import { getAllTracks } from "@/lib/supabase/queries/tracks";
+import { getAllAlbums } from "@/lib/supabase/queries/albums";
 import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
 
 export async function Sidebar() {
-  const [recent, categories, tags, archive, tracks, settings] =
+  const [recent, categories, tags, archive, tracks, albums, settings] =
     await Promise.all([
       getRecentPosts(5),
       getAllCategories(),
       getAllTags(),
       getArchive(),
       getAllTracks(),
+      getAllAlbums(),
       getSiteSettings(),
     ]);
 
@@ -76,6 +79,15 @@ export async function Sidebar() {
           <TaxonomyList items={tags} basePath="/tags" />
         </div>
       </section>
+
+      {albums.length > 0 ? (
+        <section className="border border-[var(--color-border)] bg-surface px-6 py-8">
+          <SectionHeading>Albums</SectionHeading>
+          <div className="mt-6">
+            <SidebarAlbums albums={albums} />
+          </div>
+        </section>
+      ) : null}
 
       {tracks.length > 0 ? (
         <section className="border border-[var(--color-border)] bg-surface px-6 py-8">

@@ -19,6 +19,24 @@ function formatTakenAt(takenAt: string | null): string {
 export function AlbumLightbox({ images }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  // 隨著每張照片依序 fade in，捲動讓該張照片可見
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    images.forEach((_, idx) => {
+      const t = setTimeout(() => {
+        itemRefs.current[idx]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, idx * 1000);
+      timers.push(t);
+    });
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [images]);
 
   const close = useCallback(() => setOpenIndex(null), []);
   const next = useCallback(() => {
@@ -55,9 +73,19 @@ export function AlbumLightbox({ images }: Props) {
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         {images.map((img, idx) => (
-          <li key={img.id}>
+          <li
+            key={img.id}
+            ref={(el) => {
+              itemRefs.current[idx] = el;
+            }}
+            style={{
+              opacity: 0,
+              animation: "album-photo-fade-in 0.6s ease-out forwards",
+              animationDelay: `${idx * 1000}ms`,
+            }}
+          >
             <button
               type="button"
               onClick={() => setOpenIndex(idx)}
