@@ -2,12 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import sharp from "sharp";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSupabaseServerWithAuth } from "@/lib/supabase/server-auth";
 import { isAlbumSlugTaken } from "@/lib/supabase/queries/admin-albums";
 import { slugify } from "@/lib/utils/slugify";
 
 const BUCKET = "blog-images";
+
+// 相簿照片上傳前壓縮：max 2400px（長邊）、WebP quality 82、自動套用 EXIF 旋轉
+// 目的：避免 Next.js /_next/image 處理大檔（>5MB / >6000px）時 Sharp 超時回 500
+async function resizeForAlbum(input: Buffer): Promise<Buffer> {
+  return sharp(input, { failOn: "none", limitInputPixels: false })
+    .rotate()
+    .resize({
+      width: 2400,
+      height: 2400,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 82 })
+    .toBuffer();
+}
 
 async function requireAuth() {
   const supabase = await getSupabaseServerWithAuth();
@@ -291,14 +307,20 @@ export async function uploadAlbumImagesAction(
       errors.push(`${file.name}：超過 10MB`);
       continue;
     }
-    const ext =
-      file.type.split("/")[1] === "jpeg" ? "jpg" : file.type.split("/")[1];
-    const key = `albums/${albumId}/${crypto.randomUUID()}.${ext}`;
-    const buffer = await file.arrayBuffer();
+    let processed: Buffer;
+    try {
+      const original = Buffer.from(await file.arrayBuffer());
+      processed = await resizeForAlbum(original);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "影像處理失敗";
+      errors.push(`${file.name}：${msg}`);
+      continue;
+    }
+    const key = `albums/${albumId}/${crypto.randomUUID()}.webp`;
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(key, buffer, {
-        contentType: file.type,
+      .upload(key, processed, {
+        contentType: "image/webp",
         upsert: false,
         cacheControl: "31536000",
       });
@@ -475,6 +497,222 @@ export async function setAlbumCoverAction(albumId: string, imageUrl: string) {
 
   revalidatePath(`/admin/albums/${albumId}/edit`);
   revalidateAll();
+}
+
+// ─────────────────────────────────────────
+// 批次刪除相片（含 storage）
+//
+// formData 命名：delete_{imageId}=on（checkbox 勾選的值）
+// 只處理屬於該 album 的 image id，避免外部塞入別本相簿的 id
+// ─────────────────────────────────────────
+export async function batchDeleteAlbumImagesAction(
+  albumId: string,
+  formData: FormData,
+) {
+  await requireAuth();
+
+  const prefix = "delete_";
+  const checkedIds: string[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith(prefix) && value === "on") {
+      checkedIds.push(key.slice(prefix.length));
+    }
+  }
+
+  if (checkedIds.length === 0) {
+    redirect(
+      `/admin/albums/${albumId}/edit?error=${encodeURIComponent("沒有選取任何照片")}`,
+    );
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  // 限定該 album 底下的 image id（同時也驗證權限歸屬）
+  const { data: imgs, error: listError } = await supabase
+    .from("album_images")
+    .select("id, url")
+    .eq("album_id", albumId)
+    .in("id", checkedIds);
+
+  if (listError) {
+    redirect(
+      `/admin/albums/${albumId}/edit?error=${encodeURIComponent(listError.message)}`,
+    );
+  }
+  const safeImgs = (imgs ?? []) as { id: string; url: string }[];
+  if (safeImgs.length === 0) {
+    redirect(
+      `/admin/albums/${albumId}/edit?error=${encodeURIComponent("找不到要刪除的照片")}`,
+    );
+  }
+
+  const { data: albumRow } = await supabase
+    .from("albums")
+    .select("cover_image")
+    .eq("id", albumId)
+    .single();
+
+  // 收集 storage 路徑
+  const marker = `/${BUCKET}/`;
+  const paths = safeImgs
+    .map((img) => {
+      const i = img.url.indexOf(marker);
+      return i >= 0 ? img.url.slice(i + marker.length) : null;
+    })
+    .filter((p): p is string => p !== null);
+
+  if (paths.length > 0) {
+    await supabase.storage.from(BUCKET).remove(paths);
+  }
+
+  const { error: deleteError } = await supabase
+    .from("album_images")
+    .delete()
+    .in(
+      "id",
+      safeImgs.map((i) => i.id),
+    );
+
+  if (deleteError) {
+    redirect(
+      `/admin/albums/${albumId}/edit?error=${encodeURIComponent(deleteError.message)}`,
+    );
+  }
+
+  // 若封面在被刪清單裡，清空 cover_image
+  if (
+    albumRow?.cover_image &&
+    safeImgs.some((i) => i.url === albumRow.cover_image)
+  ) {
+    await supabase
+      .from("albums")
+      .update({ cover_image: null })
+      .eq("id", albumId);
+  }
+
+  revalidatePath(`/admin/albums/${albumId}/edit`);
+  revalidateAll();
+  redirect(
+    `/admin/albums/${albumId}/edit?notice=${encodeURIComponent(`已刪除 ${safeImgs.length} 張照片`)}`,
+  );
+}
+
+// ─────────────────────────────────────────
+// 一次性重新壓縮整本相簿的照片
+//
+// 用途：歷史上傳的原檔（相機 JPG，常見 6000×4000、5–15MB）會讓 Next.js
+// /_next/image 在 Sharp 處理時超時回 500，導致 thumbnail 顯示不出來。
+// 這個 action 會把每張照片從 Storage 下載 → sharp resize → 上傳新檔
+// → 更新 album_images.url（必要時同步更新 albums.cover_image）→ 刪除舊檔。
+// ─────────────────────────────────────────
+export async function reprocessAlbumImagesAction(albumId: string) {
+  await requireAuth();
+  const supabase = getSupabaseAdmin();
+
+  const { data: imgs, error: listError } = await supabase
+    .from("album_images")
+    .select("id, url")
+    .eq("album_id", albumId)
+    .order("sort_order", { ascending: true });
+
+  if (listError) {
+    redirect(
+      `/admin/albums/${albumId}/edit?error=${encodeURIComponent(listError.message)}`,
+    );
+  }
+  if (!imgs || imgs.length === 0) {
+    redirect(
+      `/admin/albums/${albumId}/edit?notice=${encodeURIComponent("沒有可處理的照片")}`,
+    );
+  }
+
+  const { data: albumRow } = await supabase
+    .from("albums")
+    .select("cover_image")
+    .eq("id", albumId)
+    .single();
+  let coverImage = albumRow?.cover_image ?? null;
+
+  const marker = `/${BUCKET}/`;
+  let processed = 0;
+  const failures: string[] = [];
+
+  for (const img of imgs as { id: string; url: string }[]) {
+    const idx = img.url.indexOf(marker);
+    if (idx < 0) {
+      failures.push(`${img.id}：無法解析 Storage 路徑`);
+      continue;
+    }
+    const oldPath = img.url.slice(idx + marker.length);
+
+    const { data: blob, error: dlError } = await supabase.storage
+      .from(BUCKET)
+      .download(oldPath);
+    if (dlError || !blob) {
+      failures.push(`${img.id}：下載失敗（${dlError?.message ?? "no data"}）`);
+      continue;
+    }
+
+    let resized: Buffer;
+    try {
+      const buffer = Buffer.from(await blob.arrayBuffer());
+      resized = await resizeForAlbum(buffer);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "影像處理失敗";
+      failures.push(`${img.id}：${msg}`);
+      continue;
+    }
+
+    const newPath = `albums/${albumId}/${crypto.randomUUID()}.webp`;
+    const { error: upError } = await supabase.storage
+      .from(BUCKET)
+      .upload(newPath, resized, {
+        contentType: "image/webp",
+        upsert: false,
+        cacheControl: "31536000",
+      });
+    if (upError) {
+      failures.push(`${img.id}：上傳失敗（${upError.message}）`);
+      continue;
+    }
+    const {
+      data: { publicUrl: newUrl },
+    } = supabase.storage.from(BUCKET).getPublicUrl(newPath);
+
+    const { error: updateError } = await supabase
+      .from("album_images")
+      .update({ url: newUrl })
+      .eq("id", img.id);
+    if (updateError) {
+      // 回滾：把新上傳的檔案刪掉，避免孤兒檔
+      await supabase.storage.from(BUCKET).remove([newPath]);
+      failures.push(`${img.id}：DB 更新失敗（${updateError.message}）`);
+      continue;
+    }
+
+    if (coverImage === img.url) {
+      await supabase
+        .from("albums")
+        .update({ cover_image: newUrl })
+        .eq("id", albumId);
+      coverImage = newUrl;
+    }
+
+    // 確認新檔已寫入後再刪舊檔；刪失敗只記 warning，不影響整體
+    await supabase.storage.from(BUCKET).remove([oldPath]);
+    processed++;
+  }
+
+  revalidatePath(`/admin/albums/${albumId}/edit`);
+  revalidateAll();
+
+  const summary =
+    failures.length > 0
+      ? `已重新壓縮 ${processed} 張，${failures.length} 張失敗：${failures.join("；")}`
+      : `已重新壓縮 ${processed} 張照片`;
+  redirect(
+    `/admin/albums/${albumId}/edit?${failures.length > 0 ? "error" : "notice"}=${encodeURIComponent(summary)}`,
+  );
 }
 
 // ─────────────────────────────────────────

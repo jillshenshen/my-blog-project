@@ -42,3 +42,6 @@ next-env.d.ts
 
 # reference materials (local only)
 /reference
+
+# local notes (personal study notes, not for repo)
+/docs/notes

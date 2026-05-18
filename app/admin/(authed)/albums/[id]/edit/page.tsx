@@ -3,12 +3,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlbumForm } from "@/components/admin/AlbumForm";
+import { BatchDeleteAlbumImagesBar } from "@/components/admin/BatchDeleteAlbumImagesBar";
 import { DeleteAlbumImageButton } from "@/components/admin/DeleteAlbumImageButton";
+import { ReprocessAlbumImagesButton } from "@/components/admin/ReprocessAlbumImagesButton";
+import { SubmittingButton } from "@/components/admin/SubmittingButton";
 import { getAlbumByIdForAdmin } from "@/lib/supabase/queries/admin-albums";
 import {
+  batchDeleteAlbumImagesAction,
   batchUpdateAlbumImagesAction,
   deleteAlbumImageAction,
   moveAlbumImageAction,
+  reprocessAlbumImagesAction,
   setAlbumCoverAction,
   updateAlbumAction,
   uploadAlbumImagesAction,
@@ -20,6 +25,7 @@ export const metadata: Metadata = {
 };
 
 const BATCH_FORM_ID = "batch-edit-images";
+const BATCH_DELETE_FORM_ID = "batch-delete-images";
 
 type Params = { id: string };
 type SearchParams = { error?: string; notice?: string };
@@ -84,17 +90,39 @@ export default async function EditAlbumPage({
             required
             className="text-sm text-foreground"
           />
-          <button
-            type="submit"
+          <SubmittingButton
+            pendingText="上傳中…"
             className="cursor-pointer self-start border border-foreground px-5 py-2 text-[11px] tracking-[0.3em] text-foreground uppercase transition hover:bg-foreground hover:text-background sm:self-auto"
           >
             上傳
-          </button>
+          </SubmittingButton>
           <span className="text-[11px] text-muted">
-            可一次選多張；單檔 10MB 內，JPEG / PNG / WebP / GIF / AVIF
+            可一次選多張；單檔 10MB 內，JPEG / PNG / WebP / GIF / AVIF。上傳後會自動壓成 max 2400px WebP。
           </span>
         </form>
       </section>
+
+      {album.images.length > 0 ? (
+        <section>
+          <h2 className="text-[11px] tracking-[0.3em] text-muted uppercase">
+            維護
+          </h2>
+          <div className="mt-4 flex flex-col gap-3 border border-[var(--color-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-foreground">
+                重新壓縮所有照片
+              </p>
+              <p className="text-[11px] text-muted">
+                把舊上傳的原檔（過大圖會導致 Next.js image optimizer 超時）重新處理成 max 2400px WebP。
+              </p>
+            </div>
+            <ReprocessAlbumImagesButton
+              action={reprocessAlbumImagesAction.bind(null, album.id)}
+              count={album.images.length}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {/* 照片管理 — 批次儲存 */}
       <section>
@@ -109,11 +137,8 @@ export default async function EditAlbumPage({
           ) : null}
         </div>
 
-        {/* 空的批次表單；以下每張照片的 input 透過 form="..." 屬性掛上來 */}
-        <form
-          id={BATCH_FORM_ID}
-          action={batchUpdateAlbumImagesAction.bind(null, album.id)}
-        />
+        {/* 批次表單：以下每張照片的 input 透過 form="..." 屬性掛上來；
+            submit button 必須是 form 的子節點，useFormStatus 才能偵測 pending */}
 
         {album.images.length === 0 ? (
           <p className="mt-6 py-10 text-center text-sm text-muted">
@@ -121,6 +146,12 @@ export default async function EditAlbumPage({
           </p>
         ) : (
           <>
+            <form
+              id={BATCH_DELETE_FORM_ID}
+              action={batchDeleteAlbumImagesAction.bind(null, album.id)}
+            >
+              <BatchDeleteAlbumImagesBar />
+            </form>
             <ul className="mt-4 space-y-4">
               {album.images.map((img, idx) => {
                 const isCover = album.coverImage === img.url;
@@ -226,6 +257,15 @@ export default async function EditAlbumPage({
                     </div>
 
                     <div className="flex flex-shrink-0 flex-col items-end gap-2 sm:w-32">
+                      <label className="flex cursor-pointer items-center gap-2 text-[10px] tracking-[0.2em] text-muted uppercase select-none">
+                        <input
+                          type="checkbox"
+                          name={`delete_${img.id}`}
+                          form={BATCH_DELETE_FORM_ID}
+                          className="h-4 w-4 cursor-pointer accent-red-500"
+                        />
+                        <span>選取</span>
+                      </label>
                       <form
                         action={setAlbumCoverAction.bind(
                           null,
@@ -250,19 +290,22 @@ export default async function EditAlbumPage({
               })}
             </ul>
 
-            {/* 批次儲存按鈕 — 頁面最下方 */}
-            <div className="mt-8 flex flex-col gap-2 border-t border-[var(--color-border)] pt-6">
-              <button
-                form={BATCH_FORM_ID}
-                type="submit"
+            {/* 批次儲存表單 — 頁面最下方；以下 alt / caption / taken_at 透過 form={BATCH_FORM_ID} 掛上 */}
+            <form
+              id={BATCH_FORM_ID}
+              action={batchUpdateAlbumImagesAction.bind(null, album.id)}
+              className="mt-8 flex flex-col gap-2 border-t border-[var(--color-border)] pt-6"
+            >
+              <SubmittingButton
+                pendingText="儲存中…"
                 className="cursor-pointer self-start border border-foreground px-6 py-2 text-[11px] tracking-[0.3em] text-foreground uppercase transition hover:bg-foreground hover:text-background"
               >
                 儲存變更
-              </button>
+              </SubmittingButton>
               <p className="text-[11px] text-muted">
                 注意：點「Set as Cover / ↑↓ / Delete」會立即執行並重整頁面，未儲存的 Alt / Caption / 拍攝日期會回到上次儲存的值。
               </p>
-            </div>
+            </form>
           </>
         )}
       </section>
