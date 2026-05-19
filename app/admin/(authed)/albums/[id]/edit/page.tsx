@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlbumForm } from "@/components/admin/AlbumForm";
 import { BatchDeleteAlbumImagesBar } from "@/components/admin/BatchDeleteAlbumImagesBar";
-import { DeleteAlbumImageButton } from "@/components/admin/DeleteAlbumImageButton";
 import { ReprocessAlbumImagesButton } from "@/components/admin/ReprocessAlbumImagesButton";
+import { SortableAlbumImages } from "@/components/admin/SortableAlbumImages";
 import { SubmittingButton } from "@/components/admin/SubmittingButton";
 import { getAlbumByIdForAdmin } from "@/lib/supabase/queries/admin-albums";
 import {
   batchDeleteAlbumImagesAction,
   batchUpdateAlbumImagesAction,
   deleteAlbumImageAction,
-  moveAlbumImageAction,
+  reorderAlbumImagesAction,
   reprocessAlbumImagesAction,
   setAlbumCoverAction,
   updateAlbumAction,
@@ -152,143 +151,13 @@ export default async function EditAlbumPage({
             >
               <BatchDeleteAlbumImagesBar />
             </form>
-            <ul className="mt-4 space-y-4">
-              {album.images.map((img, idx) => {
-                const isCover = album.coverImage === img.url;
-                const isFirst = idx === 0;
-                const isLast = idx === album.images.length - 1;
-                return (
-                  <li
-                    key={img.id}
-                    className="flex flex-col gap-4 border border-[var(--color-border)] p-4 sm:flex-row"
-                  >
-                    <div className="flex-shrink-0">
-                      <div className="relative h-32 w-32 overflow-hidden bg-[var(--color-border)]">
-                        <Image
-                          src={img.url}
-                          alt={img.alt || "album image"}
-                          fill
-                          sizes="128px"
-                          className="object-cover"
-                        />
-                      </div>
-                      {isCover ? (
-                        <p className="mt-2 text-center text-[10px] tracking-[0.2em] text-accent uppercase">
-                          Cover
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="flex flex-1 flex-col gap-3">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <label className="block">
-                          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
-                            Alt（SEO 替代文字）
-                          </span>
-                          <input
-                            form={BATCH_FORM_ID}
-                            name={`alt_${img.id}`}
-                            type="text"
-                            defaultValue={img.alt}
-                            maxLength={200}
-                            className="mt-1 w-full border border-[var(--color-border)] bg-background px-2 py-1.5 text-sm text-foreground focus:border-foreground focus:outline-none"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
-                            拍攝日期
-                          </span>
-                          <input
-                            form={BATCH_FORM_ID}
-                            name={`takenAt_${img.id}`}
-                            type="date"
-                            defaultValue={img.takenAt ?? ""}
-                            className="mt-1 w-full border border-[var(--color-border)] bg-background px-2 py-1.5 text-sm text-foreground focus:border-foreground focus:outline-none"
-                          />
-                        </label>
-                        <label className="block sm:col-span-2">
-                          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
-                            Caption（燈箱底部說明）
-                          </span>
-                          <input
-                            form={BATCH_FORM_ID}
-                            name={`caption_${img.id}`}
-                            type="text"
-                            defaultValue={img.caption}
-                            maxLength={300}
-                            className="mt-1 w-full border border-[var(--color-border)] bg-background px-2 py-1.5 text-sm text-foreground focus:border-foreground focus:outline-none"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase">
-                        {!isFirst ? (
-                          <form
-                            action={moveAlbumImageAction.bind(
-                              null,
-                              img.id,
-                              "up",
-                            )}
-                          >
-                            <button
-                              type="submit"
-                              className="cursor-pointer text-muted transition hover:text-foreground"
-                            >
-                              ↑ Up
-                            </button>
-                          </form>
-                        ) : null}
-                        {!isLast ? (
-                          <form
-                            action={moveAlbumImageAction.bind(
-                              null,
-                              img.id,
-                              "down",
-                            )}
-                          >
-                            <button
-                              type="submit"
-                              className="cursor-pointer text-muted transition hover:text-foreground"
-                            >
-                              ↓ Down
-                            </button>
-                          </form>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-shrink-0 flex-col items-end gap-2 sm:w-32">
-                      <label className="flex cursor-pointer items-center gap-2 text-[10px] tracking-[0.2em] text-muted uppercase select-none">
-                        <input
-                          type="checkbox"
-                          name={`delete_${img.id}`}
-                          form={BATCH_DELETE_FORM_ID}
-                          className="h-4 w-4 cursor-pointer accent-red-500"
-                        />
-                        <span>選取</span>
-                      </label>
-                      <form
-                        action={setAlbumCoverAction.bind(
-                          null,
-                          album.id,
-                          img.url,
-                        )}
-                      >
-                        <button
-                          type="submit"
-                          disabled={isCover}
-                          className="cursor-pointer text-[10px] tracking-[0.2em] text-foreground uppercase transition hover:text-accent disabled:cursor-default disabled:text-muted"
-                        >
-                          {isCover ? "✓ Cover" : "Set as Cover"}
-                        </button>
-                      </form>
-                      <DeleteAlbumImageButton
-                        action={deleteAlbumImageAction.bind(null, img.id)}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <SortableAlbumImages
+              coverImage={album.coverImage || null}
+              images={album.images}
+              reorderAction={reorderAlbumImagesAction.bind(null, album.id)}
+              setCoverAction={setAlbumCoverAction.bind(null, album.id)}
+              deleteImageAction={deleteAlbumImageAction}
+            />
 
             {/* 批次儲存表單 — 頁面最下方；以下 alt / caption / taken_at 透過 form={BATCH_FORM_ID} 掛上 */}
             <form
@@ -303,7 +172,7 @@ export default async function EditAlbumPage({
                 儲存變更
               </SubmittingButton>
               <p className="text-[11px] text-muted">
-                注意：點「Set as Cover / ↑↓ / Delete」會立即執行並重整頁面，未儲存的 Alt / Caption / 拍攝日期會回到上次儲存的值。
+                注意：點「Set as Cover / Delete」會立即執行並重整頁面，未儲存的 Alt / Caption / 拍攝日期會回到上次儲存的值。拖曳排序不會。
               </p>
             </form>
           </>

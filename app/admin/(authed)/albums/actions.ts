@@ -716,48 +716,59 @@ export async function reprocessAlbumImagesAction(albumId: string) {
 }
 
 // ─────────────────────────────────────────
-// 上 / 下移排序（交換 sort_order）
+// 拖曳排序：一次寫入整本相簿的新順序
+//
+// orderedImageIds 必須是該 album 底下所有照片 id 的排列。
+// 為了支援 client 端「拖完即存、不重 render」的樂觀更新，
+// 這支 action 刻意不 revalidate 編輯頁，避免 alt / caption /
+// 拍攝日期等 uncontrolled input 被洗回上次儲存的值。
 // ─────────────────────────────────────────
-export async function moveAlbumImageAction(
-  imageId: string,
-  direction: "up" | "down",
-) {
+export async function reorderAlbumImagesAction(
+  albumId: string,
+  orderedImageIds: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireAuth();
   const supabase = getSupabaseAdmin();
 
-  const { data: target } = await supabase
+  // 取該相簿所有實際存在的 image id 來驗證輸入
+  const { data: rows, error: listError } = await supabase
     .from("album_images")
-    .select("id, album_id, sort_order")
-    .eq("id", imageId)
+    .select("id")
+    .eq("album_id", albumId);
+
+  if (listError) return { ok: false, error: listError.message };
+  const validIds = new Set((rows ?? []).map((r) => r.id));
+
+  if (orderedImageIds.length !== validIds.size) {
+    return { ok: false, error: "ID 數量與相簿不符" };
+  }
+  for (const id of orderedImageIds) {
+    if (!validIds.has(id)) {
+      return { ok: false, error: "包含不屬於此相簿的 ID" };
+    }
+  }
+
+  // 並行更新 sort_order；sort_order 沒有 unique 約束，不會衝突
+  const results = await Promise.all(
+    orderedImageIds.map((id, idx) =>
+      supabase
+        .from("album_images")
+        .update({ sort_order: idx })
+        .eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) return { ok: false, error: failed.error.message };
+
+  // 取 slug 並重新驗證公開頁；admin 編輯頁刻意不 revalidate
+  const { data: album } = await supabase
+    .from("albums")
+    .select("slug")
+    .eq("id", albumId)
     .single();
-  if (!target) return;
 
-  // up：找 sort_order 比目前小的、由大到小取第一個 → 立刻在上方那張
-  // down：找 sort_order 比目前大的、由小到大取第一個 → 立刻在下方那張
-  const baseQuery = supabase
-    .from("album_images")
-    .select("id, sort_order")
-    .eq("album_id", target.album_id)
-    .order("sort_order", { ascending: direction !== "up" })
-    .limit(1);
+  if (album?.slug) revalidatePath(`/albums/${album.slug}`);
+  revalidatePath("/albums");
 
-  const { data: neighbours } =
-    direction === "up"
-      ? await baseQuery.lt("sort_order", target.sort_order)
-      : await baseQuery.gt("sort_order", target.sort_order);
-
-  const neighbour = neighbours?.[0];
-  if (!neighbour) return; // 已在最上 / 最下
-
-  await supabase
-    .from("album_images")
-    .update({ sort_order: neighbour.sort_order })
-    .eq("id", target.id);
-  await supabase
-    .from("album_images")
-    .update({ sort_order: target.sort_order })
-    .eq("id", neighbour.id);
-
-  revalidatePath(`/admin/albums/${target.album_id}/edit`);
-  revalidateAll();
+  return { ok: true };
 }
