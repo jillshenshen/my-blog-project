@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import { PostArticle } from "@/components/blog/PostArticle";
 import { ShareInline } from "@/components/blog/ShareInline";
 import { Comments } from "@/components/blog/Comments";
+import { JsonLd } from "@/components/seo/JsonLd";
 import {
   getAdjacentPosts,
   getAllPosts,
   getPostBySlug,
 } from "@/lib/supabase/queries/posts";
 import { getCommentsForPost } from "@/lib/supabase/queries/comments";
+import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
 import { decodeParam } from "@/lib/utils/decode-param";
 
 const SITE_URL = (
@@ -56,9 +58,10 @@ export default async function PostPage({
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const [threads, adjacent] = await Promise.all([
+  const [threads, adjacent, settings] = await Promise.all([
     getCommentsForPost(post.id),
     getAdjacentPosts(post.id, post.publishedAt),
+    getSiteSettings(),
   ]);
   const url = `${SITE_URL}/posts/${post.slug}`;
 
@@ -67,8 +70,46 @@ export default async function PostPage({
     0,
   );
 
+  const articleJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    author: {
+      "@type": "Person",
+      name: settings.title,
+      url: `${SITE_URL}/about`,
+    },
+    publisher: { "@type": "Person", name: settings.title },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    articleSection: post.category.name,
+  };
+  if (post.excerpt) articleJsonLd.description = post.excerpt;
+  if (post.coverImage) articleJsonLd.image = post.coverImage;
+  if (post.tags.length > 0) {
+    articleJsonLd.keywords = post.tags.map((t) => t.name).join(", ");
+  }
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "首頁", item: SITE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: post.category.name,
+        item: `${SITE_URL}/categories/${post.category.slug}`,
+      },
+      { "@type": "ListItem", position: 3, name: post.title, item: url },
+    ],
+  };
+
   return (
     <div>
+      <JsonLd data={articleJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <PostArticle post={post} />
 
       <footer className="mt-10 flex items-center justify-between sm:px-6">

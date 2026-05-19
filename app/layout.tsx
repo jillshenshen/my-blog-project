@@ -5,6 +5,7 @@ import {
   Dancing_Script,
   Noto_Sans_TC,
 } from "next/font/google";
+import { JsonLd } from "@/components/seo/JsonLd";
 import "./globals.css";
 
 const inter = Inter({
@@ -48,6 +49,26 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+const SITE_NAME = "Jill's blog";
+const SITE_DESCRIPTION = "一個專注於高品質技術內容的個人部落格。";
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  url: SITE_URL,
+  name: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  // 啟用 Google sitelinks 搜尋框（指向本站 /search?q=）
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 const themeInitScript = `(() => {
   try {
     const stored = localStorage.getItem("theme");
@@ -69,6 +90,7 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <JsonLd data={websiteJsonLd} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
