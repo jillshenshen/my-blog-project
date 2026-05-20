@@ -1,9 +1,9 @@
 # 個人技術部落格 產品規格書（PRD）
 
-> **文件版本：** v1.2
+> **文件版本：** v1.3
 > **建立日期：** 2026 年 4 月 28 日
-> **最後更新：** 2026 年 5 月 8 日
-> **文件狀態：** Phase 1 + Phase 2 主要功能完成並上線
+> **最後更新：** 2026 年 5 月 20 日
+> **文件狀態：** Phase 1 ~ Phase 4 主要功能完成並上線；Phase 5 部分完成
 
 ---
 
@@ -37,7 +37,7 @@
 | 文章編輯器 | Tiptap v3 | WYSIWYG，支援字型 / 文字顏色 / 背景顏色 / 大小 / 文字對齊 / 縮排 / 圖片對齊 + 圓角切換 / 圖說 / YouTube 影片 / 特殊字元 |
 | 內容儲存格式 | sanitized HTML | 不存 Markdown；Tiptap 輸出 + DOMPurify 白名單 |
 | 部署平台 | Vercel | GitHub 自動部署 |
-| 音樂播放 | Spotify Embed (Phase 4) | 合法嵌入，免版權風險 |
+| 音樂播放 | 自家 MP3（HTML5 `<audio>` + Supabase Storage `audio` bucket） | 取代原規劃的 Spotify Embed（訪客只能聽 30 秒） |
 
 > ⚠️ **內容格式變更說明**：Phase 2-B 原規劃用 Markdown 編輯器，後因部落格定位改為「日常生活 + 照片」（拖拉貼圖 UX 比語法重要），改用 Tiptap WYSIWYG，內容格式從 Markdown 改為 HTML。前台渲染從 unified/shiki pipeline 改為 `<div dangerouslySetInnerHTML />` + 伺服端 DOMPurify。
 
@@ -61,7 +61,11 @@
 - 顯示閱讀時間估算（例：「約 5 分鐘閱讀」）
 - 圖片支援 alignment（left / center / right）+ 5 級尺寸 + 拖拉 resize
 - 圖片下方可選圖說文字（`<figcaption>`）
-- ⏳ 待做：上一篇／下一篇導航、TOC、按讚、留言（Phase 2-D / Phase 3）
+- ✅ 上一篇 / 下一篇導航（文章 footer 下方）
+- ✅ 留言系統（匿名 + Google 登入，verified 徽章，一層 reply）
+- ✅ 分享按鈕（複製連結 / LINE / Facebook）
+- 🚫 按讚（評估後不做）
+- ⏳ TOC（文章目錄，暫緩）
 
 #### 3.1.3 分類 + 標籤系統
 
@@ -74,27 +78,30 @@
 #### 3.1.4 搜尋功能
 
 - ✅ Phase 1 簡易版：ILIKE 比對標題 / excerpt / content（`/search?q=...`）
-- ⏳ Phase 2-D 強化：改用 Postgres tsvector 全文搜尋向量 + GIN index
+- ✅ Phase 2-D 強化：Postgres tsvector 全文搜尋向量 + GIN index + `search_posts(q)` RPC（含 ts_rank 排序與 ILIKE fallback）
 
 ---
 
-### 3.2 相簿系統
+### 3.2 相簿系統（已完成）
 
-- 相簿列表：顯示所有相簿，附封面照片與相簿名稱
-- 相簿詳細頁：格狀顯示相簿內所有照片
-- 燈箱效果（Lightbox）：點擊照片放大，支援左右切換
-- 相簿分類管理
-- 照片上傳至 Supabase Storage，自動壓縮優化
+- ✅ 相簿列表 `/albums`：grid 2/3/4/5 cols（mobile→xl），方形封面 + 標題置中、分頁 20 本一頁
+- ✅ 相簿詳細頁 `/albums/[slug]`：方形 grid + Client `AlbumLightbox`（← → / Esc / 點背景關閉、caption + 拍攝日期、鎖捲動；手機隱藏左右箭頭，改用滑動切換）
+- ✅ 燈箱效果（Lightbox）：點擊照片放大，鍵盤 / 觸控滑動切換
+- ✅ 後台 `/admin/albums`：基本資訊 form、多檔上傳、每張可編輯 alt / caption / taken_at、@dnd-kit 拖曳排序、設為封面、刪除（含 Storage 同步刪除）
+- ✅ 排程發布：`published_at` 機制與文章一致；前台公開查詢過濾未到時間的相簿
+- ✅ 照片上傳至 Supabase Storage（重用 `blog-images` bucket，路徑 `albums/{albumId}/{uuid}.ext`）
 
 ---
 
-### 3.3 音樂播放器
+### 3.3 音樂播放器（已完成 — 方案變更）
 
-- 固定懸浮於頁面底部（類似 Spotify 底部播放 bar）
-- 使用 Spotify Embed 嵌入，合法無版權疑慮
-- 管理員在後台設定 Spotify 播放清單連結
-- 支援最小化／展開切換
-- 顯示歌曲名稱、歌手、專輯封面
+> ⚠️ **方案變更**：原規劃用 Spotify Embed，但訪客只能聽 30 秒，改成自家 MP3 方案。
+
+- ✅ Sidebar 客製 UI `components/blog/MusicWidget.tsx`：Music heading + 歌名 / 藝人 + 進度條 + 上一首 / 播放 / 下一首 / 愛心（全手繪 SVG icon）
+- ✅ HTML5 `<audio>` 控制 + 自動接下一首
+- ✅ 後台 `/admin/music`：上傳音檔 + 選填封面 + title / artist、上下排序、刪除（同步從 Storage 刪檔）
+- ✅ DB：`supabase/migrations/0008_tracks.sql`（tracks 表 + 公開讀 RLS；audio Supabase Storage bucket 20MB）
+- ✅ 掛在首頁 + 所有 (blog) 路由 sidebar；無 tracks 時不渲染；相簿頁無 sidebar 故無播放器
 
 ---
 
@@ -117,16 +124,18 @@
 
 ### 3.5 SEO 功能
 
-| 功能 | 說明 | 優先級 |
-| --- | --- | --- |
-| SSR 伺服器端渲染 | 所有頁面由 Next.js 伺服器渲染，確保爬蟲可讀取內容 | P0 |
-| 動態 Meta Tags | 每篇文章獨立設定 title / description / canonical URL | P0 |
-| Open Graph 預覽 | 分享至社群時顯示漂亮縮圖與標題 | P0 |
-| Sitemap 自動產生 | 自動生成 sitemap.xml，提交至 Google Search Console | P0 |
-| robots.txt | 引導爬蟲正確抓取頁面 | P0 |
-| 結構化資料（JSON-LD） | Article schema，讓 Google 搜尋結果更豐富 | P1 |
-| 圖片優化 | 使用 Next.js Image component 自動壓縮與 WebP 轉換 | P1 |
-| RSS Feed | 讓讀者可透過 RSS 訂閱最新文章 | P1 |
+| 功能 | 說明 | 優先級 | 狀態 |
+| --- | --- | --- | --- |
+| SSR 伺服器端渲染 | 所有頁面由 Next.js 伺服器渲染，確保爬蟲可讀取內容 | P0 | ✅ |
+| 動態 Meta Tags | 每篇文章獨立設定 title / description / canonical URL | P0 | ✅ |
+| Open Graph 預覽 | 分享至社群時顯示漂亮縮圖與標題（含動態 OG 圖） | P0 | ✅ |
+| Sitemap 自動產生 | 自動生成 sitemap.xml | P0 | ✅ |
+| robots.txt | 引導爬蟲正確抓取頁面 | P0 | ✅ |
+| 結構化資料（JSON-LD） | WebSite + BlogPosting + Breadcrumb schema | P1 | ✅ |
+| 圖片優化 | 使用 Next.js Image component 自動壓縮與 WebP 轉換 | P1 | ✅ |
+| WCAG AA 對比度 | 主題色通過對比度檢查 | P1 | ✅ |
+| Google Search Console 提交 | 提交 sitemap 至 GSC、驗證所有權 | P0 | ⏳ |
+| RSS Feed | 讓讀者可透過 RSS 訂閱最新文章 | P1 | 🚫 評估後不做 |
 
 ---
 
@@ -150,17 +159,30 @@
 - ✅ 分類管理 `/admin/categories`（新增/rename/delete）
 - ✅ 標籤管理 `/admin/tags`（rename/delete；建立可在文章表單裡直接新增）
 
-#### 3.6.3 相簿管理
+#### 3.6.3 相簿管理（已完成）
 
-- 建立 / 刪除相簿
-- 批次上傳照片
-- 設定相簿封面
+- ✅ 建立 / 編輯 / 刪除相簿 `/admin/albums`
+- ✅ 批次上傳照片 + 每張可編 alt / caption / taken_at
+- ✅ 設定相簿封面、@dnd-kit 拖曳排序、排程發布
 
-#### 3.6.4 主題設定
+#### 3.6.4 留言管理（已完成）
 
-- 切換預設主題
-- 微調主題參數（色系、字體、圓角）
-- 設定 Spotify 播放清單連結
+- ✅ `/admin/comments`：顯示 verified 徽章 + email + 刪除
+- ✅ `ADMIN_EMAILS` 環境變數白名單守門
+
+#### 3.6.5 音樂管理（已完成）
+
+- ✅ `/admin/music`：上傳音檔（mpeg / mp4 / wav / ogg / webm / m4a）+ 選填封面 + title / artist
+- ✅ 上下排序、編輯 metadata、刪除（含 Storage 同步刪檔）
+
+#### 3.6.6 About me 管理（已完成）
+
+- ✅ `/admin/about`：頭像上傳 + 移除、Sidebar 短介紹、Tiptap 編輯 `/about` 長 bio
+
+#### 3.6.7 主題設定（未開始）
+
+- ⏳ 切換預設主題（多套，例：極簡白、深色駭客、溫暖橘）
+- ⏳ 微調主題參數（色系、字體、圓角）
 
 ---
 
@@ -184,21 +206,21 @@
 | Phase 2-A | Supabase Auth、`/admin/login`、proxy.ts 路由保護、Dashboard 殼 | ✅ 完成 |
 | Phase 2-B | 文章 CRUD、Tiptap WYSIWYG、tag 多選、草稿 / 發布、刪除確認、文章預覽 | ✅ 完成 |
 | Phase 2-C | 圖片上傳 (`blog-images` Storage bucket)、封面圖、Tiptap 拖拉貼圖 | ✅ 完成 |
-| Phase 2-D | 全文搜尋 (tsvector)、RSS Feed、動態 Open Graph 圖、上一篇/下一篇 | ⏳ 未開始 |
-| Phase 3 | 留言、按讚、相簿系統、燈箱效果 | ⏳ 未開始 |
-| Phase 4 | 音樂播放器（Spotify Embed）、主題切換系統、主題微調面板 | ⏳ 未開始 |
-| Phase 5 | 結構化資料（JSON-LD）、效能優化、Search Console 提交 | ⏳ 未開始 |
+| Phase 2-D | 全文搜尋 (tsvector)、動態 Open Graph 圖、上一篇 / 下一篇（RSS 評估後不做、TOC 暫緩） | ✅ 完成 |
+| Phase 3 | 留言、相簿系統、燈箱效果、分享按鈕（按讚評估後不做） | ✅ 完成 |
+| Phase 4 | 音樂播放器（自家 MP3，取代 Spotify Embed）、About me 後台 + /about 頁 | ✅ 完成（剩主題切換系統 / 微調面板未做） |
+| Phase 5 | 結構化資料（JSON-LD）、WCAG AA 對比度、圖片優化、Search Console 提交、Lighthouse 微調 | ⏳ 進行中（JSON-LD / WCAG / 圖片優化已完成；Search Console + Lighthouse 待做） |
 
 ---
 
 ## 6. 待確認事項（Open Questions）
 
-- 留言功能是否需要使用者登入，或匿名留言即可？（待 Phase 3 開工前討論）
-- 按讚是否要防止重複按讚（需記錄 IP 或要求登入）？
-- 主題數量：初版預計幾套主題？
-- 相簿照片是否有容量限制（Supabase 免費方案 Storage 上限為 1GB）？
-- 域名（Domain）是否已有，或需要另外購買？目前用 Vercel 給的 `*.vercel.app`
-- Google Search Console 是否需要在 Phase 2-D 之前完成驗證設定？
+- ✅ 留言功能是否需要使用者登入：採「匿名 + Google 登入並存」，登入者有 verified 徽章
+- 🚫 按讚是否要防止重複按讚：評估後決定不做按讚
+- ⏳ 主題數量：初版預計幾套主題？（Phase 4 殘留）
+- ⏳ 相簿照片是否有容量限制（Supabase 免費方案 Storage 上限為 1GB）？
+- ⏳ 域名（Domain）是否已有，或需要另外購買？目前用 Vercel 給的 `*.vercel.app`
+- ⏳ Google Search Console 何時完成驗證？（Phase 5 待辦）
 
 ---
 
@@ -229,18 +251,23 @@
 | 管理員後台 | 後台 | P0 | Phase 2-A | ✅ |
 | 文章 CRUD | 後台 | P0 | Phase 2-B | ✅ |
 | 分類 / 標籤管理頁 | 後台 | P1 | Phase 2-B | ✅ |
-| 全文搜尋 (tsvector) | 文章 | P1 | Phase 2-D | ⏳ |
-| RSS Feed | SEO | P1 | Phase 2-D | ⏳ |
-| 動態 OG 圖 | SEO | P1 | Phase 2-D | ⏳ |
+| 全文搜尋 (tsvector + GIN + ts_rank) | 文章 | P1 | Phase 2-D | ✅ |
+| 動態 OG 圖 (next/og) | SEO | P1 | Phase 2-D | ✅ |
+| 上一篇 / 下一篇 | 文章 | P2 | Phase 2-D | ✅ |
 | 文章目錄（TOC） | 文章 | P1 | Phase 2-D | ⏳ |
-| 上一篇 / 下一篇 | 文章 | P2 | Phase 2-D | ⏳ |
-| 文章按讚 | 互動 | P1 | Phase 3 | ⏳ |
-| 留言功能 | 互動 | P1 | Phase 3 | ⏳ |
-| 相簿系統 | 相簿 | P1 | Phase 3 | ⏳ |
-| 燈箱效果 | 相簿 | P2 | Phase 3 | ⏳ |
-| 分享按鈕 | 互動 | P2 | Phase 3 | ⏳ |
-| 音樂播放器 | 媒體 | P2 | Phase 4 | ⏳ |
-| 主題切換系統 | UI | P1 | Phase 4 | ⏳ |
+| RSS Feed | SEO | P1 | Phase 2-D | 🚫 評估後不做 |
+| 文章按讚 | 互動 | P1 | Phase 3 | 🚫 評估後不做 |
+| 留言功能（匿名 + Google 登入） | 互動 | P1 | Phase 3 | ✅ |
+| 相簿系統 | 相簿 | P1 | Phase 3 | ✅ |
+| 燈箱效果（含手機滑動切換） | 相簿 | P2 | Phase 3 | ✅ |
+| 分享按鈕（複製 / LINE / FB） | 互動 | P2 | Phase 3 | ✅ |
+| 音樂播放器（自家 MP3） | 媒體 | P2 | Phase 4 | ✅ |
+| About me 後台 + /about 頁 | 後台 | P1 | Phase 4 | ✅ |
+| 主題切換系統（多套預設） | UI | P1 | Phase 4 | ⏳ |
 | 主題微調面板 | UI | P2 | Phase 4 | ⏳ |
-| 結構化資料 JSON-LD | SEO | P1 | Phase 5 | ⏳ |
-| 圖片自動優化 (WebP) | 效能 | P1 | Phase 5 | ⏳ |
+| 結構化資料 JSON-LD | SEO | P1 | Phase 5 | ✅ |
+| WCAG AA 對比度 | SEO | P1 | Phase 5 | ✅ |
+| 圖片自動優化 (next/image + WebP) | 效能 | P1 | Phase 5 | ✅ |
+| 列表頁 skeleton shimmer loading | UX | P2 | Phase 5 | ✅ |
+| Google Search Console 提交 | SEO | P0 | Phase 5 | ⏳ |
+| Lighthouse 效能微調 (Performance ≥ 90) | 效能 | P1 | Phase 5 | ⏳ |
