@@ -1,57 +1,20 @@
 /**
- * 把文章 HTML 內的 <img> 重寫成走 Next.js Image Optimization API。
+ * 對文章 HTML 內的 <img> 加上 loading="lazy" + decoding="async"
  *
- * 為什麼需要：Tiptap 編輯器吐出的 HTML 含原生 <img src="https://...supabase...">，
- * 直接從 Supabase Storage 拉原圖，單張可能 3-5 MB，整篇 9-10 MB，會把 LCP 拉到 7s+。
- * 改走 /_next/image 後 Next.js 會自動 resize + 轉 WebP + cache，下載量降約 90%。
+ * 為什麼需要：Tiptap 編輯器吐出的 HTML 含原生 <img>，預設是 eager loading，
+ * 會在頁面初始載入時同時下載所有圖片，跟封面圖搶頻寬，導致 LCP 偏高（曾經量到 7s+）。
+ * 加上 lazy 後，非首屏圖片等捲動到附近才下載，封面圖能優先載入完成。
  *
- * 此 transform 在 render time 執行（不是寫入時），所以舊文章也會被優化。
+ * 註：原本嘗試把 src 改寫成 /_next/image 走 Vercel 圖片優化，雖然下載量可省 9 成，
+ *     但 Lighthouse 從美國測時 Vercel 圖片優化是冷快取，每張要 1-2s 的 transform，
+ *     反而把 LCP 拉到 17s+，故拿掉。
  */
-
-const NEXT_IMAGE_PATH = "/_next/image";
-const SUPABASE_PUBLIC_PATH = "/storage/v1/object/public/";
-
-const WIDTHS = [640, 1080, 1920] as const;
-const DEFAULT_WIDTH = 1080;
-const QUALITY = 75;
-
-function buildNextImageUrl(originalUrl: string, width: number): string {
-  return `${NEXT_IMAGE_PATH}?url=${encodeURIComponent(originalUrl)}&w=${width}&q=${QUALITY}`;
-}
 
 export function optimizeArticleImages(html: string): string {
   return html.replace(/<img\b([^>]*?)\/?>/gi, (match, rawAttrs: string) => {
-    const srcMatch = rawAttrs.match(/\bsrc\s*=\s*["']([^"']+)["']/);
-    if (!srcMatch) return match;
-    const src = srcMatch[1];
-
-    if (src.startsWith(NEXT_IMAGE_PATH)) return match;
-
-    // 清掉會被我們覆寫的屬性，避免重複
     const cleanedAttrs = rawAttrs
-      .replace(
-        /\b(srcset|sizes|loading|decoding|fetchpriority)\s*=\s*["'][^"']*["']/gi,
-        "",
-      )
+      .replace(/\b(loading|decoding)\s*=\s*["'][^"']*["']/gi, "")
       .trim();
-
-    const isSupabaseImage = src.includes(SUPABASE_PUBLIC_PATH);
-    const lazyAttrs = `loading="lazy" decoding="async"`;
-
-    if (!isSupabaseImage) {
-      return `<img ${cleanedAttrs} ${lazyAttrs}>`;
-    }
-
-    const attrsWithoutSrc = cleanedAttrs.replace(
-      /\bsrc\s*=\s*["'][^"']+["']/,
-      "",
-    );
-    const optimizedSrc = buildNextImageUrl(src, DEFAULT_WIDTH);
-    const srcset = WIDTHS.map(
-      (w) => `${buildNextImageUrl(src, w)} ${w}w`,
-    ).join(", ");
-    const sizes = "(max-width: 1024px) 100vw, 720px";
-
-    return `<img ${attrsWithoutSrc} src="${optimizedSrc}" srcset="${srcset}" sizes="${sizes}" ${lazyAttrs}>`;
+    return `<img ${cleanedAttrs} loading="lazy" decoding="async">`;
   });
 }

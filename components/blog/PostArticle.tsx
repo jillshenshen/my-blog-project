@@ -55,7 +55,6 @@ export function PostArticle({ post, isPreview = false }: Props) {
             alt={post.title}
             width={1200}
             height={800}
-            sizes="(max-width: 1024px) 100vw, 720px"
             className="h-auto w-full object-cover"
             priority
             unoptimized={isPreview}
