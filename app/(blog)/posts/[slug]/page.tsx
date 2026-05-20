@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostArticle } from "@/components/blog/PostArticle";
+import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { ShareInline } from "@/components/blog/ShareInline";
 import { Comments } from "@/components/blog/Comments";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -9,6 +10,7 @@ import {
   getAdjacentPosts,
   getAllPosts,
   getPostBySlug,
+  getRelatedPosts,
 } from "@/lib/supabase/queries/posts";
 import { getCommentsForPost } from "@/lib/supabase/queries/comments";
 import { getSiteSettings } from "@/lib/supabase/queries/site-settings";
@@ -58,10 +60,11 @@ export default async function PostPage({
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const [threads, adjacent, settings] = await Promise.all([
+  const [threads, adjacent, settings, related] = await Promise.all([
     getCommentsForPost(post.id),
     getAdjacentPosts(post.id, post.publishedAt),
     getSiteSettings(),
+    getRelatedPosts(post.id, post.category.id, 3),
   ]);
   const url = `${SITE_URL}/posts/${post.slug}`;
 
@@ -122,7 +125,9 @@ export default async function PostPage({
         <ShareInline url={url} title={post.title} />
       </footer>
 
-      <nav className="mt-6 flex items-center justify-between gap-4 bg-[var(--color-border)] px-3 py-4 sm:px-4">
+      <RelatedPosts posts={related} />
+
+      <nav className="mt-12 flex items-center justify-between gap-4 bg-[var(--color-border)] px-3 py-4 sm:px-4">
         {adjacent.previous ? (
           <Link
             href={`/posts/${adjacent.previous.slug}`}

@@ -209,6 +209,27 @@ export async function searchPosts(query: string): Promise<Post[]> {
   return withCommentCounts(rows.map(mapPost));
 }
 
+// 同分類其他文章，按發布時間倒序取 N 筆
+export async function getRelatedPosts(
+  currentPostId: string,
+  categoryId: string,
+  limit = 3,
+): Promise<Post[]> {
+  const supabase = getSupabaseServer();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(POST_SELECT)
+    .eq("category_id", categoryId)
+    .eq("published", true)
+    .lte("published_at", nowIso())
+    .neq("id", currentPostId)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as unknown as PostRow[]).map(mapPost);
+}
+
 export type AdjacentPost = { slug: string; title: string };
 export type AdjacentPosts = {
   previous: AdjacentPost | null;
