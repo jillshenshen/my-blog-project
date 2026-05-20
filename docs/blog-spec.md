@@ -1,9 +1,9 @@
 # 個人技術部落格 產品規格書（PRD）
 
-> **文件版本：** v1.3
+> **文件版本：** v1.4
 > **建立日期：** 2026 年 4 月 28 日
 > **最後更新：** 2026 年 5 月 20 日
-> **文件狀態：** Phase 1 ~ Phase 4 主要功能完成並上線；Phase 5 部分完成
+> **文件狀態：** Phase 1 ~ Phase 4 主要功能完成並上線；Phase 5 進行中（GSC 因 vercel.app noindex 受阻、Lighthouse 已優化但受限於 free tier）
 
 ---
 
@@ -62,6 +62,7 @@
 - 圖片支援 alignment（left / center / right）+ 5 級尺寸 + 拖拉 resize
 - 圖片下方可選圖說文字（`<figcaption>`）
 - ✅ 上一篇 / 下一篇導航（文章 footer 下方）
+- ✅ 相關文章「You Might Also Like」（文章底部，同分類取最新 3 篇）
 - ✅ 留言系統（匿名 + Google 登入，verified 徽章，一層 reply）
 - ✅ 分享按鈕（複製連結 / LINE / Facebook）
 - 🚫 按讚（評估後不做）
@@ -134,7 +135,9 @@
 | 結構化資料（JSON-LD） | WebSite + BlogPosting + Breadcrumb schema | P1 | ✅ |
 | 圖片優化 | 使用 Next.js Image component 自動壓縮與 WebP 轉換 | P1 | ✅ |
 | WCAG AA 對比度 | 主題色通過對比度檢查 | P1 | ✅ |
-| Google Search Console 提交 | 提交 sitemap 至 GSC、驗證所有權 | P0 | ⏳ |
+| Lighthouse 效能優化 | 內文 `<img>` 加 lazy load / decoding="async"，避免 9.5MB 圖片跟封面圖搶頻寬；LCP 7.1s → 5.6s、CLS 0.193 → 0 | P1 | ✅ |
+| Google Search Console 驗證 meta tag | `metadata.verification.google` 已部署 | P0 | ✅ |
+| Google Search Console 提交 sitemap | 需先通過所有權驗證 | P0 | 🚫 受限於 `*.vercel.app` 預設 URL 帶 `x-robots-tag: noindex`（Vercel 端無法移除），等買自訂網域再做 |
 | RSS Feed | 讓讀者可透過 RSS 訂閱最新文章 | P1 | 🚫 評估後不做 |
 
 ---
@@ -209,7 +212,7 @@
 | Phase 2-D | 全文搜尋 (tsvector)、動態 Open Graph 圖、上一篇 / 下一篇（RSS 評估後不做、TOC 暫緩） | ✅ 完成 |
 | Phase 3 | 留言、相簿系統、燈箱效果、分享按鈕（按讚評估後不做） | ✅ 完成 |
 | Phase 4 | 音樂播放器（自家 MP3，取代 Spotify Embed）、About me 後台 + /about 頁 | ✅ 完成（剩主題切換系統 / 微調面板未做） |
-| Phase 5 | 結構化資料（JSON-LD）、WCAG AA 對比度、圖片優化、Search Console 提交、Lighthouse 微調 | ⏳ 進行中（JSON-LD / WCAG / 圖片優化已完成；Search Console + Lighthouse 待做） |
+| Phase 5 | 結構化資料（JSON-LD）、WCAG AA 對比度、圖片優化、Lighthouse 內文圖片 lazy load、Search Console 提交 | ⏳ 進行中（JSON-LD / WCAG / 圖片優化 / 內文 lazy load / GSC 驗證 meta 完成；GSC 提交受 vercel.app noindex 阻擋暫緩；Lighthouse LCP 5.6s 已近 free tier 物理下限） |
 
 ---
 
@@ -220,7 +223,7 @@
 - ⏳ 主題數量：初版預計幾套主題？（Phase 4 殘留）
 - ⏳ 相簿照片是否有容量限制（Supabase 免費方案 Storage 上限為 1GB）？
 - ⏳ 域名（Domain）是否已有，或需要另外購買？目前用 Vercel 給的 `*.vercel.app`
-- ⏳ Google Search Console 何時完成驗證？（Phase 5 待辦）
+- 🚫 Google Search Console 完成驗證：HTML 標記已部署，但 `*.vercel.app` 預設 URL 帶 `x-robots-tag: noindex`（Vercel 端無法移除），GSC 拒絕驗證。等買自訂網域後再做
 
 ---
 
@@ -261,6 +264,7 @@
 | 相簿系統 | 相簿 | P1 | Phase 3 | ✅ |
 | 燈箱效果（含手機滑動切換） | 相簿 | P2 | Phase 3 | ✅ |
 | 分享按鈕（複製 / LINE / FB） | 互動 | P2 | Phase 3 | ✅ |
+| 相關文章「You Might Also Like」（同分類取最新 3 篇） | 互動 | P2 | Phase 3 | ✅ |
 | 音樂播放器（自家 MP3） | 媒體 | P2 | Phase 4 | ✅ |
 | About me 後台 + /about 頁 | 後台 | P1 | Phase 4 | ✅ |
 | 主題切換系統（多套預設） | UI | P1 | Phase 4 | ⏳ |
@@ -269,5 +273,7 @@
 | WCAG AA 對比度 | SEO | P1 | Phase 5 | ✅ |
 | 圖片自動優化 (next/image + WebP) | 效能 | P1 | Phase 5 | ✅ |
 | 列表頁 skeleton shimmer loading | UX | P2 | Phase 5 | ✅ |
-| Google Search Console 提交 | SEO | P0 | Phase 5 | ⏳ |
+| 內文 `<img>` lazy load (LCP 7.1s → 5.6s) | 效能 | P1 | Phase 5 | ✅ |
+| GSC 驗證 meta tag 部署 | SEO | P0 | Phase 5 | ✅ |
+| GSC 提交 sitemap | SEO | P0 | Phase 5 | 🚫 受 vercel.app noindex 阻擋 |
 | Lighthouse 效能微調 (Performance ≥ 90) | 效能 | P1 | Phase 5 | ⏳ |
