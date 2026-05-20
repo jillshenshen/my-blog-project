@@ -47,6 +47,9 @@ export const metadata: Metadata = {
     siteName: "Jill's blog",
   },
   robots: { index: true, follow: true },
+  verification: {
+    google: "H6gEVeYoTWvYbFiHb4mPjj8l_Qd9WAZ_c3qtH_xMtiU",
+  },
 };
 
 const SITE_NAME = "Jill's blog";
