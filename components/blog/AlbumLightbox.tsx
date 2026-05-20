@@ -177,7 +177,7 @@ export function AlbumLightbox({ images }: Props) {
                   type="button"
                   onClick={prev}
                   aria-label="上一張"
-                  className="absolute top-1/2 left-2 -translate-y-1/2 cursor-pointer p-3 text-3xl text-white/80 transition hover:text-white sm:left-6"
+                  className="absolute top-1/2 left-6 hidden -translate-y-1/2 cursor-pointer p-3 text-3xl text-white/80 transition hover:text-white sm:block"
                 >
                   ‹
                 </button>
@@ -185,7 +185,7 @@ export function AlbumLightbox({ images }: Props) {
                   type="button"
                   onClick={next}
                   aria-label="下一張"
-                  className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer p-3 text-3xl text-white/80 transition hover:text-white sm:right-6"
+                  className="absolute top-1/2 right-6 hidden -translate-y-1/2 cursor-pointer p-3 text-3xl text-white/80 transition hover:text-white sm:block"
                 >
                   ›
                 </button>
